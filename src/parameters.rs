@@ -8,6 +8,13 @@ pub enum Direction {
     CounterClockWise,
 }
 
+#[derive(PartialEq, Clone, Copy)]
+pub enum Stop {
+    Coast,
+    Brake,
+    Hold
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
     Black,
