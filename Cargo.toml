@@ -1,14 +1,14 @@
 [package]
-name = "rs-ev3"
+name = "ev3dev-rs"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-ev3dev-lang-rust = { version = "0.14", features = ["ev3", "screen"] }
 pid = "4.0.0"
 scopeguard = "1.2.0"
 smol = "2.0.2"
 tokio = {version = "1.48.0", features = ["macros", "rt", "rt-multi-thread"]}
+
 
 [profile.release]
 lto = true

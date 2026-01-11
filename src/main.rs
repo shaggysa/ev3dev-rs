@@ -1,36 +1,25 @@
-use ev3dev_lang_rust::Ev3Result;
-mod parameters;
-mod pupdevices;
-mod robotics;
-mod tools;
+use std::time::Duration;
 
-use parameters::{Direction, MotorPort, SensorPort, Stop};
-use pupdevices::{GyroSensor, Motor};
-use robotics::DriveBase;
+use crate::{error::Ev3Result, parameters::SensorPort, sensors::GyroSensor};
+
+mod attribute;
+mod error;
+mod motor_driver;
+mod parameters;
+mod sensor_driver;
+mod sensors;
 
 #[tokio::main]
 async fn main() -> Ev3Result<()> {
-    let left_motor = Motor::new(MotorPort::OutA, Direction::CounterClockWise)?;
-    let right_motor = Motor::new(MotorPort::OutD, Direction::CounterClockWise)?;
+    let s1 = GyroSensor::new(SensorPort::In2)?;
 
-    left_motor.set_stop_action(Stop::Hold)?;
-    right_motor.set_stop_action(Stop::Hold)?;
+    println!("{}", s1.heading()?);
 
-    let gyro_1 = GyroSensor::new(SensorPort::In2)?;
-    let gyro_2 = GyroSensor::new(SensorPort::In3)?;
+    println!("{}", s1.tilt()?);
 
-    let mut drive = DriveBase::new(left_motor, right_motor, 72.0, 128.0);
+    println!("{:?}", s1.heading_and_velocity()?);
 
-    drive.add_gyro(gyro_1)?;
-    drive.add_gyro(gyro_2)?;
-
-    drive.set_stop_option(Stop::Hold)?;
-
-    drive.use_gyro(false);
-
-    drive.straight(750).await?;
-
-    drive.straight(-750).await?;
+    println!("{}", s1.tilt_velocity()?);
 
     Ok(())
 }
