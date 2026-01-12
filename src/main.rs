@@ -1,25 +1,28 @@
-use std::time::Duration;
+use smol::Timer;
 
-use crate::{error::Ev3Result, parameters::SensorPort, sensors::GyroSensor};
+use crate::{
+    error::{Ev3Error, Ev3Result},
+    parameters::SensorPort,
+    pupdevices::{ColorSensor, GyroSensor, InfraredSensor, TouchSensor, UltrasonicSensor},
+};
 
 mod attribute;
+mod enum_string;
 mod error;
 mod motor_driver;
 mod parameters;
+mod pupdevices;
 mod sensor_driver;
-mod sensors;
 
 #[tokio::main]
 async fn main() -> Ev3Result<()> {
-    let s1 = GyroSensor::new(SensorPort::In2)?;
+    let s1 = UltrasonicSensor::new(SensorPort::In4)?;
+    let s2 = InfraredSensor::new(SensorPort::In2)?;
 
-    println!("{}", s1.heading()?);
+    loop {
+        let (heading, distance) = s2.seek_channel_1()?;
+        println!("heading: {:?} distance: {:?}", heading, distance);
 
-    println!("{}", s1.tilt()?);
-
-    println!("{:?}", s1.heading_and_velocity()?);
-
-    println!("{}", s1.tilt_velocity()?);
-
-    Ok(())
+        Timer::after(std::time::Duration::from_millis(100)).await;
+    }
 }

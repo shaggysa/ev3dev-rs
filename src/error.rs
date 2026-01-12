@@ -1,4 +1,9 @@
-use std::{num::ParseIntError, path::PathBuf};
+use std::{
+    error::Error,
+    fmt::Display,
+    num::{ParseFloatError, ParseIntError},
+    path::PathBuf,
+};
 
 use crate::{attribute::FileMode, parameters::SensorPort, sensor_driver::SensorType};
 
@@ -17,8 +22,8 @@ pub enum Ev3Error {
         found: SensorType,
     },
     ParseStr {
-        str: String,
-        enum_type: String,
+        input: String,
+        to: String,
     },
     PermissionDenied {
         required_permission: FileMode,
@@ -36,11 +41,32 @@ pub enum Ev3Error {
     ParseInt {
         err: ParseIntError,
     },
+    ParseFloat {
+        err: ParseFloatError,
+    },
+    InvalidValue {
+        func: String,
+        value: String,
+    },
 }
+
+impl Display for Ev3Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for Ev3Error {}
 
 impl From<std::num::ParseIntError> for Ev3Error {
     fn from(err: std::num::ParseIntError) -> Self {
         Ev3Error::ParseInt { err }
+    }
+}
+
+impl From<std::num::ParseFloatError> for Ev3Error {
+    fn from(err: std::num::ParseFloatError) -> Self {
+        Ev3Error::ParseFloat { err }
     }
 }
 
