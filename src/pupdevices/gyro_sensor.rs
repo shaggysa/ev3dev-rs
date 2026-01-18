@@ -2,14 +2,24 @@ use crate::{
     attribute::AttributeName,
     error::Ev3Result,
     parameters::SensorPort,
-    sensor_driver::{
-        SensorDriver,
-        SensorMode::{self, *},
-        SensorType,
-    },
+    sensor_driver::{SensorDriver, SensorMode::*, SensorType},
 };
 
 /// Stock EV3 Gyro Sensor
+///
+/// # Examples
+/// ```
+/// use ev3dev_rs::pupdevices::GyroSensor;
+/// use ev3dev_rs::parameters::SensorPort;
+///
+/// let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
+///
+/// println!("Heading: {}", gyro_sensor.heading()?);
+/// println!("Velocity: {}", gyro_sensor.rate()?);
+/// println!("Tilt: {}", gyro_sensor.tilt()?);
+/// println!("Tilt Velocity: {}", gyro_sensor.tilt_velocity()?);
+///
+/// ```
 pub struct GyroSensor {
     driver: SensorDriver,
 }

@@ -44,23 +44,31 @@ impl InfraredSensor {
 
     #[inline]
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 1.
+    ///
+    /// Note that the set will be empty if three or more buttons are pressed.
     pub fn get_remote_channel_1_buttons(&self) -> Ev3Result<HashSet<Button>> {
         self.get_remote_buttons(AttributeName::Value0)
     }
 
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 2.
+    ///
+    /// Note that the set will be empty if three or more buttons are pressed.
     #[inline]
     pub fn get_remote_channel_2_buttons(&self) -> Ev3Result<HashSet<Button>> {
         self.get_remote_buttons(AttributeName::Value1)
     }
 
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 3.
+    ///
+    /// Note that the set will be empty if three or more buttons are pressed.
     #[inline]
     pub fn get_remote_channel_3_buttons(&self) -> Ev3Result<HashSet<Button>> {
         self.get_remote_buttons(AttributeName::Value2)
     }
 
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 4.
+    ///
+    /// Note that the set will be empty if three or more buttons are pressed.
     #[inline]
     pub fn get_remote_channel_4_buttons(&self) -> Ev3Result<HashSet<Button>> {
         self.get_remote_buttons(AttributeName::Value3)
@@ -184,7 +192,7 @@ impl InfraredSensor {
         Ok(set)
     }
 
-    pub fn seek(&self, attr1: AttributeName, attr2: AttributeName) -> Ev3Result<(i8, i8)> {
+    fn seek(&self, attr1: AttributeName, attr2: AttributeName) -> Ev3Result<(i8, i8)> {
         if self.driver.mode.get() != SensorMode::InfraredSeek {
             self.driver.set_mode(SensorMode::InfraredSeek)?;
         }

@@ -12,6 +12,7 @@ const SENSOR_DIR: &str = "/sys/class/lego-sensor";
 
 crate_enum_str! {
     SensorType,
+
     (Gyro, "lego-ev3-gyro"),
     (Color, "lego-ev3-color"),
     (Ultrasonic, "lego-ev3-us"),
@@ -21,6 +22,7 @@ crate_enum_str! {
 
 crate_enum_str! {
     SensorMode,
+
     (GyroAngle, "GYRO-ANG"),
     (GyroRate, "GYRO-RATE"),
     (GyroRateUnscaled, "GYRO-FAS"),
@@ -55,14 +57,14 @@ crate_enum_str! {
 
 }
 
-pub struct SensorDriver {
+pub(crate) struct SensorDriver {
     base_path: PathBuf,
     attributes: RefCell<HashMap<AttributeName, Attribute>>,
     pub(crate) mode: Cell<SensorMode>,
 }
 
 impl SensorDriver {
-    pub fn new(sensor_type: SensorType, port: SensorPort) -> Ev3Result<Self> {
+    pub(crate) fn new(sensor_type: SensorType, port: SensorPort) -> Ev3Result<Self> {
         if let Ok(entries) = fs::read_dir(SENSOR_DIR) {
             for entry in entries {
                 if let Ok(direntry) = entry.map(|e| e.path().to_path_buf())
@@ -110,7 +112,7 @@ impl SensorDriver {
         })
     }
 
-    pub fn read_attribute(&self, name: AttributeName) -> Ev3Result<String> {
+    pub(crate) fn read_attribute(&self, name: AttributeName) -> Ev3Result<String> {
         if let Some(attr) = self.attributes.borrow().get(&name) {
             attr.get()
         } else {
@@ -123,21 +125,24 @@ impl SensorDriver {
         }
     }
 
-    pub fn set_attribute(&self, name: AttributeName, value: &str) -> Ev3Result<()> {
+    pub(crate) fn set_attribute<T>(&self, name: AttributeName, value: T) -> Ev3Result<()>
+    where
+        T: AsStr,
+    {
         if let Some(attr) = self.attributes.borrow().get(&name) {
-            attr.set(value)
+            attr.set(value.as_str())
         } else {
             // if the value if not in the hashmap, create a new attribue,
             // set its value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
-            attr.set(value)?;
+            attr.set(value.as_str())?;
             _ = self.attributes.borrow_mut().insert(name, attr);
             Ok(())
         }
     }
 
-    pub fn set_mode(&self, mode: SensorMode) -> Ev3Result<()> {
-        self.set_attribute(AttributeName::Mode, mode.as_str())?;
+    pub(crate) fn set_mode(&self, mode: SensorMode) -> Ev3Result<()> {
+        self.set_attribute(AttributeName::Mode, mode)?;
         self.mode.set(mode);
         Ok(())
     }

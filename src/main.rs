@@ -1,9 +1,13 @@
+use std::time::Duration;
+
 use smol::Timer;
 
 use crate::{
-    error::{Ev3Error, Ev3Result},
-    parameters::SensorPort,
-    pupdevices::{ColorSensor, GyroSensor, InfraredSensor, TouchSensor, UltrasonicSensor},
+    motor_driver::MotorDriver,
+    parameters::{MotorPort, SensorPort, Stop},
+    pupdevices::{ColorSensor, GyroSensor, InfraredSensor, Motor, TouchSensor, UltrasonicSensor},
+    robotics::{DriveBase, GyroController},
+    tools::wait,
 };
 
 mod attribute;
@@ -11,18 +15,29 @@ mod enum_string;
 mod error;
 mod motor_driver;
 mod parameters;
-mod pupdevices;
+pub mod pupdevices;
+pub mod robotics;
 mod sensor_driver;
+pub mod tools;
+
+pub use error::{Ev3Error, Ev3Result};
+
+use attribute::AttributeName;
+use parameters::Direction;
 
 #[tokio::main]
 async fn main() -> Ev3Result<()> {
-    let s1 = UltrasonicSensor::new(SensorPort::In4)?;
-    let s2 = InfraredSensor::new(SensorPort::In2)?;
+    let motor = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
+    let motor2 = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+    let gyro = GyroSensor::new(SensorPort::In3)?;
 
-    loop {
-        let (heading, distance) = s2.seek_channel_1()?;
-        println!("heading: {:?} distance: {:?}", heading, distance);
+    let controller = GyroController::new(vec![gyro])?;
+    let drive = DriveBase::new(&motor, &motor2, 60.0, 140.0).with_gyro(&controller);
+    drive.use_gyro(true);
+    drive.set_stop_option(Stop::Hold)?;
+    drive.set_turn_speed(350);
 
-        Timer::after(std::time::Duration::from_millis(100)).await;
-    }
+    drive.straight(10000).await?;
+
+    Ok(())
 }

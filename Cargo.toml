@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+futures = "0.3.31"
 pid = "4.0.0"
 scopeguard = "1.2.0"
 smol = "2.0.2"

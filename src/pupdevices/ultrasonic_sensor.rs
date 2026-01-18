@@ -6,6 +6,18 @@ use crate::{
 };
 
 /// A stock EV3 ultrasonic sensor.
+///
+/// # Examples
+/// ```
+/// use ev3dev_rs::pupdevices::UltrasonicSensor;
+/// use ev3dev_rs::parameters::SensorPort;
+///
+/// let ultrasonic_sensor = UltrasonicSensor::new(SensorPort::In1)?;
+///
+/// println!("Distance (in): {}", ultrasonic_sensor.distance_in()?);
+/// println!("Distance (cm): {}", ultrasonic_sensor.distance_cm()?);
+///
+/// ```
 pub struct UltrasonicSensor {
     driver: SensorDriver,
 }

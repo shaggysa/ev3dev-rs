@@ -6,6 +6,17 @@ use crate::{
 };
 
 /// A stock EV3 touch sensor.
+///
+/// # Examples
+/// ```
+/// use ev3dev_rs::pupdevices::TouchSensor;
+/// use ev3dev_rs::parameters::SensorPort;
+///
+/// let touch_sensor = TouchSensor::new(SensorPort::In1)?;
+///
+/// println!("Is the sensor pressed? : {}", if touch_sensor.pressed()? {"Yes"} else {"No"});
+///
+/// ```
 pub struct TouchSensor {
     driver: SensorDriver,
 }
@@ -20,7 +31,7 @@ impl TouchSensor {
         Ok(Self { driver })
     }
 
-    /// Returns `true` if the sensor is pressed and `false` otherwise.
+    /// Returns `true` if the sensor is currently pressed and `false` otherwise.
     pub fn pressed(&self) -> Ev3Result<bool> {
         // only one possible mode, no need to check
         let raw_value = self.driver.read_attribute(Value0)?;

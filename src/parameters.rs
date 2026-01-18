@@ -7,10 +7,35 @@ use crate::pub_enum_str;
 
 pub_enum_str! {
     SensorPort,
+
     (In1, "ev3-ports:in1"),
     (In2, "ev3-ports:in2"),
     (In3, "ev3-ports:in3"),
     (In4, "ev3-ports:in4"),
+}
+
+pub_enum_str! {
+    MotorPort,
+
+    (OutA, "ev3-ports:outA"),
+    (OutB, "ev3-ports:outB"),
+    (OutC, "ev3-ports:outC"),
+    (OutD, "ev3-ports:outD"),
+}
+
+pub_enum_str! {
+    Direction,
+
+    (Clockwise, "normal"),
+    (CounterClockwise, "inversed"),
+}
+
+pub_enum_str! {
+    Stop,
+
+    (Coast, "coast"),
+    (Brake, "brake"),
+    (Hold, "hold"),
 }
 
 #[derive(Debug)]
@@ -64,6 +89,7 @@ impl FromStr for Color {
     }
 }
 
+/// a list of buttons on the EV3 beacon remote
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Button {
     RedUp,

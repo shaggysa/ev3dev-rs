@@ -5,13 +5,20 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{attribute::FileMode, parameters::SensorPort, sensor_driver::SensorType};
+use crate::{
+    attribute::FileMode,
+    parameters::{MotorPort, SensorPort},
+    sensor_driver::SensorType,
+};
 
 #[derive(Debug)]
 pub enum Ev3Error {
     SensorNotFound {
         port: SensorPort,
         expected_sensor_type: SensorType,
+    },
+    MotorNotFound {
+        port: MotorPort,
     },
     FileNotFound {
         path: PathBuf,

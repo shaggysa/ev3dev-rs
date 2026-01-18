@@ -19,7 +19,7 @@ use std::str::FromStr;
 /// println!("Ambient light intensity: {}", color_sensor.ambient()?);
 /// println!("Current color: {}", color_sensor.color()?);
 ///
-/// let (r, g, b) = color_sensor.rgb()?;
+/// let (r, g, b) = color_sensor.raw_rgb()?;
 /// println!("red: {}", r);
 /// println!("green: {}", g);
 /// println!("blue: {}", b);
