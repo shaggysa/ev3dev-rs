@@ -55,6 +55,7 @@ pub enum Ev3Error {
         func: String,
         value: String,
     },
+    NoSensorProvided,
 }
 
 impl Display for Ev3Error {

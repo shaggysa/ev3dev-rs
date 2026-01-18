@@ -25,12 +25,12 @@ use crate::pupdevices::GyroSensor;
 /// println!("Heading: {}", heading);
 /// println!("Angular Velocity: {}", angular_velocity);
 /// ```
-pub struct GyroController {
-    pub(crate) gyros: Vec<(GyroSensor, i16)>,
+pub struct GyroController<'a> {
+    pub(crate) gyros: Vec<(&'a GyroSensor, i16)>,
 }
 
-impl GyroController {
-    pub fn new(gyros: Vec<GyroSensor>) -> Ev3Result<Self> {
+impl<'a> GyroController<'a> {
+    pub fn new(gyros: Vec<&'a GyroSensor>) -> Ev3Result<Self> {
         let mut gyros_with_offsets = Vec::new();
         for gyro in gyros {
             let heading = gyro.heading()?;
@@ -43,8 +43,8 @@ impl GyroController {
 
     pub fn heading(&self) -> Ev3Result<f32> {
         let mut sum = 0.0;
-        for (gyro, offset) in &self.gyros {
-            sum += (gyro.heading()? - *offset) as f32;
+        for (gyro, offset) in self.gyros.iter() {
+            sum += (gyro.heading()? - offset) as f32;
         }
 
         Ok(sum / self.gyros.len() as f32)
@@ -52,7 +52,7 @@ impl GyroController {
 
     pub fn angular_velocity(&self) -> Ev3Result<f32> {
         let mut sum = 0.0;
-        for (gyro, _) in &self.gyros {
+        for (gyro, _) in self.gyros.iter() {
             sum += gyro.angular_velocity()? as f32;
         }
 

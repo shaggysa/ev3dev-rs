@@ -132,6 +132,11 @@ impl Motor {
         self.send_command(Command::Reset)
     }
 
+    /// Stops the motor with the previously selected stop action.
+    pub fn stop_prev_action(&self) -> Ev3Result<()> {
+        self.send_command(Command::Stop)
+    }
+
     /// Stops the motor and lets it spin freely.
     ///
     /// This also has the effect of setting the motor's stop action to `coast`.
