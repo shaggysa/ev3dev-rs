@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use fixed::types::I32F32;
 use smol::Timer;
 
 use crate::{
@@ -15,6 +16,7 @@ mod enum_string;
 mod error;
 mod motor_driver;
 mod parameters;
+mod pid;
 pub mod pupdevices;
 pub mod robotics;
 mod sensor_driver;
@@ -27,6 +29,10 @@ use parameters::Direction;
 
 #[tokio::main]
 async fn main() -> Ev3Result<()> {
+    use pid::Pid;
+
+    let p = Pid::new(123.234, 1234.6, 1324.6);
+
     let motor = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
     let motor2 = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
     let gyro = GyroSensor::new(SensorPort::In3)?;
