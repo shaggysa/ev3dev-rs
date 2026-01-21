@@ -32,5 +32,7 @@ async fn main() -> Ev3Result<()> {
     drive.set_stop_action(Stop::Hold)?;
     drive.set_turn_speed(350);
 
+    drive.straight(800).await?;
+
     Ok(())
 }
