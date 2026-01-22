@@ -38,6 +38,7 @@ enum_str! {
 #[allow(dead_code)]
 pub struct Motor {
     driver: MotorDriver,
+    direction: Direction,
     last_command: Cell<Option<Command>>,
     count_per_rot: u32,
     count_per_degree: u32,
@@ -75,6 +76,7 @@ impl Motor {
 
         Ok(Self {
             driver,
+            direction,
             last_command: Cell::new(None),
             count_per_rot,
             count_per_degree: count_per_rot / 360,
@@ -146,7 +148,9 @@ impl Motor {
     ///
     /// This also has the effect of stopping the motor.
     pub fn reset(&self) -> Ev3Result<()> {
-        self.send_command(Command::Reset)
+        self.send_command(Command::Reset)?;
+        self.driver
+            .set_attribute_enum(AttributeName::Polarity, self.direction)
     }
 
     /// Stops the motor with the previously selected stop action.
