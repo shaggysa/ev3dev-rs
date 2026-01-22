@@ -335,8 +335,6 @@ impl<'a> DriveBase<'a> {
 
             let error = (gyro_turned - encoder_turned).abs();
             println!("Error: {}", error);
-            // Return to start
-            self.turn(-90).await?;
 
             Ok(error)
         } else {
