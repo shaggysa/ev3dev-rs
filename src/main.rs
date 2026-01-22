@@ -1,7 +1,7 @@
 use crate::{
     parameters::{MotorPort, SensorPort, Stop},
     pupdevices::{GyroSensor, Motor},
-    robotics::{DriveBase, GyroController},
+    robotics::DriveBase,
 };
 
 mod attribute;
@@ -26,13 +26,10 @@ async fn main() -> Ev3Result<()> {
     let motor2 = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
     let gyro = GyroSensor::new(SensorPort::In3)?;
 
-    let drive = DriveBase::new(&motor, &motor2, 60.0, 140.0).with_gyro(&gyro)?;
+    let mut drive = DriveBase::new(&motor, &motor2, 62.4, 130.5)?.with_gyro(&gyro)?;
 
     drive.use_gyro(true)?;
-    drive.set_stop_action(Stop::Hold)?;
-    drive.set_turn_speed(350);
-
-    drive.straight(800).await?;
-
+    drive.set_turn_speed(400);
+    drive.find_calibrated_axle_track(50).await?;
     Ok(())
 }

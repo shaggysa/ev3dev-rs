@@ -1,5 +1,7 @@
 use std::vec;
 
+use fixed::types::I32F32;
+
 use crate::error::Ev3Result;
 use crate::pupdevices::GyroSensor;
 
@@ -41,21 +43,21 @@ impl<'a> GyroController<'a> {
         })
     }
 
-    pub fn heading(&self) -> Ev3Result<f32> {
-        let mut sum = 0.0;
+    pub fn heading(&self) -> Ev3Result<I32F32> {
+        let mut sum = I32F32::from_num(0.0);
         for (gyro, offset) in self.gyros.iter() {
-            sum += (gyro.heading()? - offset) as f32;
+            sum += I32F32::from_num(gyro.heading()? - offset);
         }
 
-        Ok(sum / self.gyros.len() as f32)
+        Ok(sum / I32F32::from_num(self.gyros.len()))
     }
 
-    pub fn angular_velocity(&self) -> Ev3Result<f32> {
-        let mut sum = 0.0;
+    pub fn angular_velocity(&self) -> Ev3Result<I32F32> {
+        let mut sum = I32F32::from_num(0.0);
         for (gyro, _) in self.gyros.iter() {
-            sum += gyro.angular_velocity()? as f32;
+            sum += I32F32::from_num(gyro.angular_velocity()?);
         }
 
-        Ok(sum / self.gyros.len() as f32)
+        Ok(sum / I32F32::from_num(self.gyros.len()))
     }
 }

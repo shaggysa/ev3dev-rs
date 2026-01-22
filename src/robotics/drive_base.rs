@@ -6,28 +6,28 @@ use crate::{Ev3Result, parameters::Stop, pupdevices::Motor};
 use fixed::traits::{LossyInto, ToFixed};
 use fixed::types::I32F32;
 use scopeguard::defer;
-use smol::Timer;
-use smol::stream::StreamExt;
 use std::cell::Cell;
 use std::time::Duration;
-
-const PI: I32F32 = I32F32::PI;
+use tokio::time::interval;
 
 pub struct DriveBase<'a> {
     left_motor: &'a Motor,
     right_motor: &'a Motor,
+    left_start_angle: i32,
+    right_start_angle: i32,
+    min_speed: I32F32,
     wheel_diameter: I32F32,
     axle_track: I32F32,
-    straight_speed: Cell<i32>,
-    turn_speed: Cell<i32>,
+    straight_speed: Cell<I32F32>,
+    turn_speed: Cell<I32F32>,
     distance_pid: Pid,
     heading_pid: Pid,
+    distance_target: Cell<I32F32>,
     heading_target: Cell<I32F32>,
     distance_tolerance: Cell<I32F32>,
     heading_tolerance: Cell<I32F32>,
     using_gyros: Cell<bool>,
     gyros: Option<GyroController<'a>>,
-    max_speed: I32F32,
 }
 
 impl<'a> DriveBase<'a> {
@@ -36,26 +36,35 @@ impl<'a> DriveBase<'a> {
         right_motor: &'a Motor,
         wheel_diameter: Number,
         axle_track: Number,
-    ) -> Self
+    ) -> Ev3Result<Self>
     where
         Number: ToFixed,
     {
-        Self {
+        left_motor.set_ramp_up_setpoint(5000)?;
+        right_motor.set_ramp_up_setpoint(5000)?;
+
+        left_motor.set_ramp_down_setpoint(1800)?;
+        right_motor.set_ramp_down_setpoint(1800)?;
+
+        Ok(Self {
             left_motor,
             right_motor,
+            left_start_angle: left_motor.angle()?,
+            right_start_angle: right_motor.angle()?,
+            min_speed: I32F32::from_num(65),
             wheel_diameter: I32F32::from_num(wheel_diameter),
             axle_track: I32F32::from_num(axle_track),
-            straight_speed: Cell::new(300),
-            turn_speed: Cell::new(300),
+            straight_speed: Cell::new(I32F32::from_num(500)),
+            turn_speed: Cell::new(I32F32::from_num(550)),
             distance_pid: Pid::new(10, 0, 8, 0, 0),
             heading_pid: Pid::new(10, 0, 5, 0, 0),
+            distance_target: Cell::new(I32F32::from_num(0)),
             heading_target: Cell::new(I32F32::from_num(0)),
             distance_tolerance: Cell::new(I32F32::from_num(4)),
             heading_tolerance: Cell::new(I32F32::from_num(0.5)),
             using_gyros: Cell::new(false),
             gyros: None,
-            max_speed: I32F32::from_num(1000),
-        }
+        })
     }
 
     /// Adds a single gyro sensor to the drive base.
@@ -84,12 +93,18 @@ impl<'a> DriveBase<'a> {
         Ok(())
     }
 
-    pub fn set_straight_speed(&self, straight_speed: i32) {
-        self.straight_speed.set(straight_speed);
+    pub fn set_straight_speed<Number>(&self, straight_speed: Number)
+    where
+        Number: ToFixed,
+    {
+        self.straight_speed.set(I32F32::from_num(straight_speed));
     }
 
-    pub fn set_turn_speed(&self, turn_speed: i32) {
-        self.turn_speed.set(turn_speed);
+    pub fn set_turn_speed<Number>(&self, turn_speed: Number)
+    where
+        Number: ToFixed,
+    {
+        self.turn_speed.set(I32F32::from_num(turn_speed));
     }
 
     pub fn set_stop_action(&self, action: Stop) -> Ev3Result<()> {
@@ -130,13 +145,7 @@ impl<'a> DriveBase<'a> {
         self.right_motor.stop_prev_action()
     }
 
-    async fn drive_relative(
-        &self,
-        distance_mm: I32F32,
-        drive_speed: I32F32,
-        angle_deg: I32F32,
-        turn_speed: I32F32,
-    ) -> Ev3Result<()> {
+    async fn drive_relative(&self, distance_mm: I32F32, angle_deg: I32F32) -> Ev3Result<()> {
         defer! {
             _ = self.stop()
         }
@@ -144,34 +153,30 @@ impl<'a> DriveBase<'a> {
         self.distance_pid.reset();
         self.heading_pid.reset();
 
-        let left_angle = I32F32::from_num(self.left_motor.angle()?);
-        let right_angle = I32F32::from_num(self.right_motor.angle()?);
+        let target_distance = self.distance_target.get() + distance_mm;
+        let target_heading = self.heading_target.get() + angle_deg;
 
-        let current_distance = self.encoders_to_distance(left_angle, right_angle);
+        self.distance_target.set(target_distance);
+        self.heading_target.set(target_heading);
 
-        let current_heading = if self.using_gyros.get()
-            && let Some(ref gyro) = self.gyros
-        {
-            I32F32::from_num(gyro.heading()?) * I32F32::from_num(0.8)
-                + self.encoders_to_heading(left_angle, right_angle) * I32F32::from_num(0.2)
-        } else {
-            self.encoders_to_heading(left_angle, right_angle)
-        };
+        let mut timer = interval(Duration::from_millis(5));
 
-        let target_distance = current_distance + distance_mm;
-        let target_heading = current_heading + angle_deg;
+        // the first tick completes immediately
+        timer.tick().await;
 
-        let mut timer = Timer::interval(Duration::from_millis(5));
+        let straight_speed = self.straight_speed.get();
+        let turn_speed = self.turn_speed.get();
 
         loop {
-            let left_angle = I32F32::from_num(self.left_motor.angle()?);
-            let right_angle = I32F32::from_num(self.right_motor.angle()?);
+            let left_angle = I32F32::from_num(self.left_motor.angle()? - self.left_start_angle);
+            let right_angle = I32F32::from_num(self.right_motor.angle()? - self.right_start_angle);
             let current_distance = self.encoders_to_distance(left_angle, right_angle);
             let current_heading = if self.using_gyros.get()
                 && let Some(ref gyro) = self.gyros
             {
+                let encoders = self.encoders_to_heading(left_angle, right_angle);
                 I32F32::from_num(gyro.heading()?) * I32F32::from_num(0.8)
-                    + self.encoders_to_heading(left_angle, right_angle) * I32F32::from_num(0.2)
+                    + encoders * I32F32::from_num(0.2)
             } else {
                 self.encoders_to_heading(left_angle, right_angle)
             };
@@ -185,19 +190,36 @@ impl<'a> DriveBase<'a> {
                 break;
             }
 
-            let drive_speed_out = self.distance_pid.next(distance_error);
-            let turn_speed_out = self.heading_pid.next(heading_error);
+            let dive_effort = self.distance_pid.next(distance_error);
+            let turn_effort = -self.heading_pid.next(heading_error);
+
+            let drive_speed_out = dive_effort * straight_speed;
+            let turn_speed_out = turn_effort * turn_speed;
+
+            let left_speed = (drive_speed_out - turn_speed_out)
+                .clamp(-self.right_motor.max_speed, self.left_motor.max_speed);
+
+            let right_speed = (drive_speed_out + turn_speed_out)
+                .clamp(-self.left_motor.max_speed, self.right_motor.max_speed);
 
             self.left_motor.run(
-                self.clamp_speed(drive_speed_out - turn_speed_out)
-                    .lossy_into(),
+                (if left_speed.abs() < self.min_speed {
+                    self.min_speed * left_speed.signum()
+                } else {
+                    left_speed
+                })
+                .lossy_into(),
             )?;
             self.right_motor.run(
-                self.clamp_speed(drive_speed_out + turn_speed_out)
-                    .lossy_into(),
+                (if right_speed.abs() < self.min_speed {
+                    self.min_speed * right_speed.signum()
+                } else {
+                    right_speed
+                })
+                .lossy_into(),
             )?;
 
-            timer.next().await;
+            timer.tick().await;
         }
 
         Ok(())
@@ -207,26 +229,16 @@ impl<'a> DriveBase<'a> {
     where
         Number: ToFixed,
     {
-        self.drive_relative(
-            I32F32::from_num(distance),
-            I32F32::from_num(0),
-            I32F32::from_num(0),
-            I32F32::from_num(0),
-        )
-        .await
+        self.drive_relative(I32F32::from_num(distance), I32F32::from_num(0))
+            .await
     }
 
     pub async fn turn<Number>(&self, angle: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
     {
-        self.drive_relative(
-            I32F32::from_num(0),
-            I32F32::from_num(0),
-            I32F32::from_num(angle),
-            I32F32::from_num(0),
-        )
-        .await
+        self.drive_relative(I32F32::from_num(0), I32F32::from_num(angle))
+            .await
     }
 
     pub async fn curve<Number>(&self, radius: Number, angle: Number) -> Ev3Result<()>
@@ -238,13 +250,8 @@ impl<'a> DriveBase<'a> {
         let angle_rad = fixed_angle * I32F32::PI / 180;
         let arc_length = I32F32::from_num(radius).abs() * I32F32::from_num(angle_rad).abs();
 
-        self.drive_relative(
-            arc_length,
-            I32F32::from_num(0),
-            fixed_angle,
-            I32F32::from_num(0),
-        )
-        .await
+        self.drive_relative(arc_length, I32F32::from_num(fixed_angle))
+            .await
     }
 
     pub async fn veer<Number>(&self, radius: Number, distance: Number) -> Ev3Result<()>
@@ -256,13 +263,68 @@ impl<'a> DriveBase<'a> {
         let angle_rad = fixed_distance / I32F32::from_num(radius);
         let angle_deg = angle_rad * 180 / I32F32::PI;
 
-        self.drive_relative(
-            fixed_distance,
-            I32F32::from_num(0),
-            angle_deg,
-            I32F32::from_num(0),
-        )
-        .await
+        self.drive_relative(fixed_distance, I32F32::from_num(angle_deg))
+            .await
+    }
+
+    pub async fn find_calibrated_axle_track<Number>(
+        &mut self,
+        margin_of_error: Number,
+    ) -> Ev3Result<I32F32>
+    where
+        Number: ToFixed,
+    {
+        if let Some(ref gyros) = self.gyros {
+            self.use_gyro(true)?;
+
+            let fixed_estimate = I32F32::from_num(self.axle_track);
+
+            let fixed_margin_of_error = I32F32::from_num(margin_of_error);
+
+            let mut min = fixed_estimate - fixed_margin_of_error;
+            let mut max = fixed_estimate + fixed_margin_of_error;
+
+            let mut last_gyro_head = I32F32::from_num(0);
+            let mut last_encoder_head = I32F32::from_num(0);
+
+            loop {
+                let mid = (min + max) / 2;
+                println!("trying {}", mid);
+                self.axle_track = mid;
+                self.turn(90).await?;
+
+                let gyro_head = gyros.heading()?;
+                let encoder_head = self.encoders_to_heading(
+                    I32F32::from_num(self.left_motor.angle()? - self.left_start_angle),
+                    I32F32::from_num(self.right_motor.angle()? - self.right_start_angle),
+                );
+
+                println!(
+                    "gyro: {}, encoder: {}",
+                    gyro_head - last_gyro_head,
+                    encoder_head - last_encoder_head
+                );
+
+                if ((gyro_head - last_gyro_head) - (encoder_head - last_encoder_head)).abs() < 0.25
+                {
+                    break;
+                }
+
+                if gyro_head - last_gyro_head < encoder_head - last_encoder_head {
+                    min = mid;
+                } else {
+                    max = mid;
+                }
+                last_gyro_head = gyro_head;
+                last_encoder_head = encoder_head;
+            }
+
+            let final_val = (min + max) / 2;
+            println!("Final value: {}", final_val);
+            Ok(final_val)
+        } else {
+            Err(Ev3Error::NoSensorProvided)
+        }
     }
 
     // Convert encoder positions to distance traveled (average of both wheels)
@@ -278,19 +340,8 @@ impl<'a> DriveBase<'a> {
         let wheel_circ = I32F32::PI * self.wheel_diameter;
         let left_mm = wheel_circ * left_deg / 360;
         let right_mm = wheel_circ * right_deg / 360;
-        let arc_diff = right_mm - left_mm;
+        let arc_diff = left_mm - right_mm;
         let turn_rad = arc_diff / self.axle_track;
         turn_rad * 180 / I32F32::PI
-    }
-
-    /// Clamp speed to max motor speed
-    fn clamp_speed(&self, speed: I32F32) -> I32F32 {
-        if speed > self.max_speed {
-            self.max_speed
-        } else if speed < -self.max_speed {
-            -self.max_speed
-        } else {
-            speed
-        }
     }
 }

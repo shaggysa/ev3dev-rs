@@ -1,5 +1,6 @@
 use std::time::Duration;
+use tokio::time::sleep;
 
 pub async fn wait(duration: Duration) {
-    smol::Timer::after(duration).await;
+    sleep(duration).await;
 }

@@ -1,5 +1,6 @@
+use fixed::types::I32F32;
 use scopeguard::defer;
-use smol::{Timer, stream::StreamExt};
+use tokio::time::interval;
 
 use crate::{
     AttributeName, enum_str,
@@ -38,6 +39,7 @@ pub struct Motor {
     last_command: Cell<Option<Command>>,
     count_per_rot: u32,
     count_per_degree: u32,
+    pub(crate) max_speed: I32F32,
 }
 
 impl Motor {
@@ -74,6 +76,7 @@ impl Motor {
             last_command: Cell::new(None),
             count_per_rot,
             count_per_degree: count_per_rot / 360,
+            max_speed: I32F32::from_num(1000),
         })
     }
 
@@ -111,10 +114,13 @@ impl Motor {
             _ = self.send_command(Command::Stop);
         }
 
-        let mut timer = smol::Timer::interval(Duration::from_millis(5));
+        let mut timer = interval(Duration::from_millis(5));
+
+        // the first tick completes immediately
+        timer.tick().await;
 
         while self.get_states()?.contains(&State::Running) {
-            timer.next().await;
+            timer.tick().await;
         }
 
         Ok(())
@@ -123,6 +129,15 @@ impl Motor {
     fn set_speed(&self, speed: i32) -> Ev3Result<()> {
         self.driver
             .set_attribute(AttributeName::SpeedSetpoint, speed)
+    }
+
+    pub fn set_ramp_up_setpoint(&self, sp: u32) -> Ev3Result<()> {
+        self.driver.set_attribute(AttributeName::RampUpSetpoint, sp)
+    }
+
+    pub fn set_ramp_down_setpoint(&self, sp: u32) -> Ev3Result<()> {
+        self.driver
+            .set_attribute(AttributeName::RampDownSetpoint, sp)
     }
 
     /// Resets all the motor parameters to their default values.
@@ -228,12 +243,15 @@ impl Motor {
         }
 
         self.dc(power)?;
-        let mut timer = Timer::interval(Duration::from_millis(5));
+        let mut timer = interval(Duration::from_millis(5));
 
         let mut states = self.get_states()?;
 
+        // the first tick completes immediately
+        timer.tick().await;
+
         while states.contains(&State::Running) && !states.contains(&State::Stalled) {
-            timer.next().await;
+            timer.tick().await;
             states = self.get_states()?;
         }
 

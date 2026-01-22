@@ -71,12 +71,15 @@ impl Pid {
     {
         let fixed_point_measurement = I32F32::from_num(measurement);
 
-        let error = -fixed_point_measurement;
-        let p = self.kp.get() * error;
+        let p = self.kp.get() * fixed_point_measurement;
 
-        if error.abs() > self.integral_deadzone.get() {
+        if fixed_point_measurement.abs() > self.integral_deadzone.get() {
             self.integral_term.set(
-                self.integral_term.get() + min(error * self.ki.get(), self.integral_rate.get()),
+                self.integral_term.get()
+                    + min(
+                        fixed_point_measurement * self.ki.get(),
+                        self.integral_rate.get(),
+                    ),
             );
         }
 
@@ -87,6 +90,9 @@ impl Pid {
 
         self.prev_measurement.set(Some(fixed_point_measurement));
 
-        p + self.integral_term.get() + d
+        let out = (p + self.integral_term.get() + d) / 500;
+
+        // clamp the output to the range [-1, 1]
+        out.clamp(I32F32::from_num(-1.0), I32F32::from_num(1.0))
     }
 }
