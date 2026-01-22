@@ -20,6 +20,7 @@ pub struct DriveBase<'a> {
     axle_track: I32F32,
     straight_speed: Cell<I32F32>,
     turn_speed: Cell<I32F32>,
+    prev_encoder_heading: Cell<I32F32>,
     distance_pid: Pid,
     heading_pid: Pid,
     distance_target: Cell<I32F32>,
@@ -56,10 +57,11 @@ impl<'a> DriveBase<'a> {
             axle_track: I32F32::from_num(axle_track),
             straight_speed: Cell::new(I32F32::from_num(500)),
             turn_speed: Cell::new(I32F32::from_num(550)),
+            prev_encoder_heading: Cell::new(I32F32::ZERO),
             distance_pid: Pid::new(10, 0, 8, 0, 0),
             heading_pid: Pid::new(10, 0, 5, 0, 0),
-            distance_target: Cell::new(I32F32::from_num(0)),
-            heading_target: Cell::new(I32F32::from_num(0)),
+            distance_target: Cell::new(I32F32::ZERO),
+            heading_target: Cell::new(I32F32::ZERO),
             distance_tolerance: Cell::new(I32F32::from_num(4)),
             heading_tolerance: Cell::new(I32F32::from_num(0.75)),
             using_gyros: Cell::new(false),
@@ -174,11 +176,11 @@ impl<'a> DriveBase<'a> {
             let current_heading = if self.using_gyros.get()
                 && let Some(ref gyro) = self.gyros
             {
-                let encoders = self.encoders_to_heading(left_angle, right_angle);
+                let encoders = self.encoders_to_heading()?;
                 I32F32::from_num(gyro.heading()?) * I32F32::from_num(0.9)
                     + encoders * I32F32::from_num(0.1)
             } else {
-                self.encoders_to_heading(left_angle, right_angle)
+                self.encoders_to_heading()?
             };
 
             let distance_error = target_distance - current_distance;
@@ -322,19 +324,14 @@ impl<'a> DriveBase<'a> {
 
         // Reset to known position
         if let Some(ref gyros) = self.gyros {
+            let start_encoder_heading = self.encoders_to_heading()?;
             gyros.reset()?;
-
-            let start_left = I32F32::from_num(self.left_motor.angle()?);
-            let start_right = I32F32::from_num(self.right_motor.angle()?);
-
             // Do a test turn (90 degrees)
             self.turn(90).await?;
 
             // Measure error
             let gyro_turned = gyros.heading()?;
-            let left_delta = I32F32::from_num(self.left_motor.angle()?) - start_left;
-            let right_delta = I32F32::from_num(self.right_motor.angle()?) - start_right;
-            let encoder_turned = self.encoders_to_heading(left_delta, right_delta);
+            let encoder_turned = self.encoders_to_heading()? - start_encoder_heading;
 
             let error = (gyro_turned - encoder_turned).abs();
             println!("Error: {}", error);
@@ -356,12 +353,21 @@ impl<'a> DriveBase<'a> {
     }
 
     /// Convert encoder positions to heading (differential between wheels)
-    fn encoders_to_heading(&self, left_deg: I32F32, right_deg: I32F32) -> I32F32 {
+    fn encoders_to_heading(&self) -> Ev3Result<I32F32> {
+        let left_deg = I32F32::from_num(self.left_motor.angle()? - self.left_start_angle);
+        let right_deg = I32F32::from_num(self.right_motor.angle()? - self.right_start_angle);
+
         let wheel_circ = I32F32::PI * self.wheel_diameter;
         let left_mm = wheel_circ * left_deg / 360;
         let right_mm = wheel_circ * right_deg / 360;
         let arc_diff = left_mm - right_mm;
         let turn_rad = arc_diff / self.axle_track;
-        turn_rad * 180 / I32F32::PI
+        let raw_heading = turn_rad * 180 / I32F32::PI;
+
+        let alpha = I32F32::from_num(0.7);
+        let filtered =
+            alpha * raw_heading + (I32F32::from_num(1) - alpha) * self.prev_encoder_heading.get();
+        self.prev_encoder_heading.set(filtered);
+        Ok(filtered)
     }
 }
