@@ -12,6 +12,7 @@ use crate::{
 };
 
 #[derive(Debug)]
+#[allow(private_interfaces)]
 pub enum Ev3Error {
     SensorNotFound {
         port: SensorPort,

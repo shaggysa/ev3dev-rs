@@ -22,6 +22,7 @@ pub(crate) struct Attribute {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[allow(dead_code)]
 pub(crate) enum AttributeName {
     Address,
     DriverName,

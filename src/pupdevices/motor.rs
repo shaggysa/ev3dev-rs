@@ -3,7 +3,8 @@ use scopeguard::defer;
 use tokio::time::interval;
 
 use crate::{
-    AttributeName, enum_str,
+    attribute::AttributeName,
+    enum_str,
     enum_string::AsStr,
     error::{Ev3Error, Ev3Result},
     motor_driver::MotorDriver,
@@ -34,6 +35,7 @@ enum_str! {
 }
 
 /// NXT motor, EV3 large and medium motors
+#[allow(dead_code)]
 pub struct Motor {
     driver: MotorDriver,
     last_command: Cell<Option<Command>>,

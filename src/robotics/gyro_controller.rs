@@ -1,5 +1,3 @@
-use std::vec;
-
 use fixed::types::I32F32;
 
 use crate::error::Ev3Result;
