@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use fixed::types::I32F32;
 
 use crate::error::Ev3Result;
@@ -26,7 +28,7 @@ use crate::pupdevices::GyroSensor;
 /// println!("Angular Velocity: {}", angular_velocity);
 /// ```
 pub struct GyroController<'a> {
-    pub(crate) gyros: Vec<(&'a GyroSensor, i16)>,
+    pub(crate) gyros: RefCell<Vec<(&'a GyroSensor, i16)>>,
 }
 
 impl<'a> GyroController<'a> {
@@ -37,25 +39,32 @@ impl<'a> GyroController<'a> {
             gyros_with_offsets.push((gyro, heading));
         }
         Ok(Self {
-            gyros: gyros_with_offsets,
+            gyros: RefCell::new(gyros_with_offsets),
         })
     }
 
     pub fn heading(&self) -> Ev3Result<I32F32> {
         let mut sum = I32F32::from_num(0.0);
-        for (gyro, offset) in self.gyros.iter() {
+        for (gyro, offset) in self.gyros.borrow().iter() {
             sum += I32F32::from_num(gyro.heading()? - offset);
         }
 
-        Ok(sum / I32F32::from_num(self.gyros.len()))
+        Ok(sum / I32F32::from_num(self.gyros.borrow().len()))
     }
 
     pub fn angular_velocity(&self) -> Ev3Result<I32F32> {
         let mut sum = I32F32::from_num(0.0);
-        for (gyro, _) in self.gyros.iter() {
+        for (gyro, _) in self.gyros.borrow().iter() {
             sum += I32F32::from_num(gyro.angular_velocity()?);
         }
 
-        Ok(sum / I32F32::from_num(self.gyros.len()))
+        Ok(sum / I32F32::from_num(self.gyros.borrow().len()))
+    }
+
+    pub fn reset(&self) -> Ev3Result<()> {
+        for (gyro, heading) in self.gyros.borrow_mut().iter_mut() {
+            *heading = gyro.heading()?;
+        }
+        Ok(())
     }
 }

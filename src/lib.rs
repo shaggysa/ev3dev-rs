@@ -2,7 +2,7 @@ mod attribute;
 mod enum_string;
 mod error;
 mod motor_driver;
-mod parameters;
+pub mod parameters;
 mod pid;
 pub mod pupdevices;
 pub mod robotics;

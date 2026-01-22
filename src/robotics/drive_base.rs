@@ -51,7 +51,7 @@ impl<'a> DriveBase<'a> {
             right_motor,
             left_start_angle: left_motor.angle()?,
             right_start_angle: right_motor.angle()?,
-            min_speed: I32F32::from_num(65),
+            min_speed: I32F32::from_num(100),
             wheel_diameter: I32F32::from_num(wheel_diameter),
             axle_track: I32F32::from_num(axle_track),
             straight_speed: Cell::new(I32F32::from_num(500)),
@@ -61,7 +61,7 @@ impl<'a> DriveBase<'a> {
             distance_target: Cell::new(I32F32::from_num(0)),
             heading_target: Cell::new(I32F32::from_num(0)),
             distance_tolerance: Cell::new(I32F32::from_num(4)),
-            heading_tolerance: Cell::new(I32F32::from_num(0.5)),
+            heading_tolerance: Cell::new(I32F32::from_num(0.75)),
             using_gyros: Cell::new(false),
             gyros: None,
         })
@@ -175,8 +175,8 @@ impl<'a> DriveBase<'a> {
                 && let Some(ref gyro) = self.gyros
             {
                 let encoders = self.encoders_to_heading(left_angle, right_angle);
-                I32F32::from_num(gyro.heading()?) * I32F32::from_num(0.8)
-                    + encoders * I32F32::from_num(0.2)
+                I32F32::from_num(gyro.heading()?) * I32F32::from_num(0.9)
+                    + encoders * I32F32::from_num(0.1)
             } else {
                 self.encoders_to_heading(left_angle, right_angle)
             };
@@ -274,54 +274,74 @@ impl<'a> DriveBase<'a> {
     where
         Number: ToFixed,
     {
-        if let Some(ref gyros) = self.gyros {
-            self.use_gyro(true)?;
+        self.use_gyro(true)?;
+        let fixed_estimate = I32F32::from_num(self.axle_track);
+        let fixed_margin_of_error = I32F32::from_num(margin_of_error);
+        let resphi = I32F32::FRAC_1_PHI;
 
-            let fixed_estimate = I32F32::from_num(self.axle_track);
+        let mut a = fixed_estimate - fixed_margin_of_error;
+        let mut b = fixed_estimate + fixed_margin_of_error;
+        let tolerance = I32F32::from_num(0.5);
 
-            let fixed_margin_of_error = I32F32::from_num(margin_of_error);
+        // Initial test points
+        let mut x1 = a + resphi * (b - a);
+        let mut x2 = b - resphi * (b - a);
 
-            let mut min = fixed_estimate - fixed_margin_of_error;
-            let mut max = fixed_estimate + fixed_margin_of_error;
+        let mut f1 = self.test_axle_track(x1).await?;
+        let mut f2 = self.test_axle_track(x2).await?;
 
-            let mut last_gyro_head = I32F32::from_num(0);
-            let mut last_encoder_head = I32F32::from_num(0);
-
-            loop {
-                let mid = (min + max) / 2;
-                println!("trying {}", mid);
-                self.axle_track = mid;
-                self.turn(90).await?;
-
-                let gyro_head = gyros.heading()?;
-                let encoder_head = self.encoders_to_heading(
-                    I32F32::from_num(self.left_motor.angle()? - self.left_start_angle),
-                    I32F32::from_num(self.right_motor.angle()? - self.right_start_angle),
-                );
-
-                println!(
-                    "gyro: {}, encoder: {}",
-                    gyro_head - last_gyro_head,
-                    encoder_head - last_encoder_head
-                );
-
-                if ((gyro_head - last_gyro_head) - (encoder_head - last_encoder_head)).abs() < 0.25
-                {
-                    break;
-                }
-
-                if gyro_head - last_gyro_head < encoder_head - last_encoder_head {
-                    min = mid;
-                } else {
-                    max = mid;
-                }
-                last_gyro_head = gyro_head;
-                last_encoder_head = encoder_head;
+        // Golden section search loop
+        while (b - a).abs() > tolerance {
+            if f1 < f2 {
+                // Minimum is between a and x2
+                a = x2;
+                x2 = x1;
+                f2 = f1;
+                x1 = a + resphi * (b - a);
+                f1 = self.test_axle_track(x1).await?;
+            } else {
+                // Minimum is between x1 and b
+                b = x1;
+                x1 = x2;
+                f1 = f2;
+                x2 = b - resphi * (b - a);
+                f2 = self.test_axle_track(x2).await?;
             }
+        }
 
-            let final_val = (min + max) / 2;
-            println!("Final value: {}", final_val);
-            Ok(final_val)
+        let best = (a + b) / I32F32::from_num(2);
+        println!("Best axle track: {}", best);
+
+        Ok(best)
+    }
+
+    // Helper function to test a single axle track value
+    async fn test_axle_track(&mut self, candidate: I32F32) -> Ev3Result<I32F32> {
+        println!("testing {}", candidate);
+        self.axle_track = candidate;
+
+        // Reset to known position
+        if let Some(ref gyros) = self.gyros {
+            gyros.reset()?;
+
+            let start_left = I32F32::from_num(self.left_motor.angle()?);
+            let start_right = I32F32::from_num(self.right_motor.angle()?);
+
+            // Do a test turn (90 degrees)
+            self.turn(90).await?;
+
+            // Measure error
+            let gyro_turned = gyros.heading()?;
+            let left_delta = I32F32::from_num(self.left_motor.angle()?) - start_left;
+            let right_delta = I32F32::from_num(self.right_motor.angle()?) - start_right;
+            let encoder_turned = self.encoders_to_heading(left_delta, right_delta);
+
+            let error = (gyro_turned - encoder_turned).abs();
+            println!("Error: {}", error);
+            // Return to start
+            self.turn(-90).await?;
+
+            Ok(error)
         } else {
             Err(Ev3Error::NoSensorProvided)
         }

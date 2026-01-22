@@ -1,8 +1,0 @@
-[target.armv5te-unknown-linux-musleabi]
-linker = "rust-lld"
-
-[target.armv5te-unknown-linux-gnueabi]
-linker = "/usr/bin/arm-linux-gnueabi-gcc"
-
-[registries.crates-io]
-protocol = "sparse"
