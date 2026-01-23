@@ -193,9 +193,17 @@ impl Attribute {
                         filename: self.path.clone(),
                         os_error: e,
                     })?;
-                fd.read_to_string(&mut buffer)
-                    .map_err(|_| Ev3Error::InvalidStringBytes)?;
-                Ok(buffer.trim_end().into())
+
+                // the file is occasionally in an invalid state
+                // this usually clears up on a retry
+                for _ in 0..5 {
+                    if fd.read_to_string(&mut buffer).is_ok() {
+                        return Ok(buffer.trim().into());
+                    }
+                }
+
+                // if 5 tries fail in a row, return the error
+                Err(Ev3Error::InvalidStringBytes)
             }
             _ => Err(Ev3Error::PermissionDenied {
                 required_permission: FileMode::Read,

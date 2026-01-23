@@ -23,6 +23,8 @@ crate_enum_str! {
 crate_enum_str! {
     SensorMode,
 
+    (None, ""),
+
     (GyroAngle, "GYRO-ANG"),
     (GyroRate, "GYRO-RATE"),
     (GyroRateUnscaled, "GYRO-FAS"),
