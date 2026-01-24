@@ -13,6 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added tools::join and tools::select. Select mimics the behavior of pybricks' racing multitask
+- Added the join and select macros. Select mimics the behavior of pybricks' racing multitask
   and join mimics the behavior of pybricks' non-racing multitask.
 - Added multitasking examples to docs. 

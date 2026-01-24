@@ -1,5 +1,3 @@
-#![feature(decl_macro)]
-#![feature(macro_metavar_expr)]
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -105,11 +103,11 @@
 //!     // join is like pybricks' non-racing multitask
 //!     // it will wait for all actions to complete before moving on
 //!     // if any task returns an error, join will return that error
-//!     tools::join!(drive.straight(100), attachment_motor.run_until_stalled(-45)).await?;
+//!     tools::join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 //!
 //!     // select is like pybricks' racing multitask
 //!     // once one action completes, the other(s) will be canceled
-//!     tools::select!(drive.turn(90), attachment_motor.run_until_stalled(45)).await?
+//!     tools::select!(drive.turn(90), attachment_motor.run_until_stalled(45))?
 //!
 //!     Ok(())
 //! }
