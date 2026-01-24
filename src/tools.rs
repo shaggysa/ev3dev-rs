@@ -28,25 +28,14 @@ pub macro select($($fut:expr),+ $(,)?) {{
 }}
 
 #[doc(hidden)]
-#[macro_export]
-macro_rules! __select_internal {
-    // Final expansion
-    ([$($arms:tt)*],) => {
-        tokio::select! {
+pub macro __select_internal([$($arms:tt)*], $head:expr $(, $tail:expr)*) {{
+    let mut __fut = std::pin::pin!($head);
+
+    __select_internal!(
+        [
             $($arms)*
-        }
-    };
-
-    // Recursive case
-    ([$($arms:tt)*], $head:expr $(, $tail:expr)*) => {{
-        let mut __fut = std::pin::pin!($head);
-
-        $crate::__select_internal!(
-            [
-                $($arms)*
-                res = &mut __fut => res?,
-            ],
-            $($tail),*
-        )
-    }};
-}
+            res = &mut __fut => res?,
+        ],
+        $($tail),*
+    )
+}}
