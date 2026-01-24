@@ -21,9 +21,11 @@ pub macro join($($fut:expr),+ $(,)?) {
 /// # Examples
 /// ```
 /// use ev3dev_rs::tools::select;
-/// select!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
+/// select!(drive.straight(100), attachment_motor.run_until_stalled(-45)).await?;
 /// ```
 pub macro select($($fut:expr),+ $(,)?) {
+async {
     use ev3dev_rs::Race;
     ($($fut),+).race().await
+    }
 }
