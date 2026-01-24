@@ -43,7 +43,7 @@ impl<'a> GyroController<'a> {
     /// let left_gyro = GyroSensor::new(SensorPort::In1)?;
     /// let right_gyro = GyroSensor::new(SensorPort::In4)?;
     ///
-    /// let controller = GyroController::new(vec![gyro1, gyro2])?;
+    /// let controller = GyroController::new(vec![&gyro1, &gyro2])?;
     /// ```
     pub fn new(gyros: Vec<&'a GyroSensor>) -> Ev3Result<Self> {
         let mut gyros_with_offsets = Vec::new();

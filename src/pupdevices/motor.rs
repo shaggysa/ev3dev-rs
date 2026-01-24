@@ -52,7 +52,7 @@ impl Motor {
     ///
     /// Note that the motor is not reset upon initialization.
     ///
-    /// #Examples
+    /// # Examples
     ///
     /// ``` no_run
     /// use ev3dev_rs::pupdevices::Motor;
