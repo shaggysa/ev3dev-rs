@@ -133,4 +133,4 @@ pub mod tools;
 pub use error::{Ev3Error, Ev3Result};
 
 #[doc(hidden)]
-pub use futures_concurrency::prelude::*;
+pub use futures_concurrency::future::Race;
