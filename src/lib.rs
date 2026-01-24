@@ -83,7 +83,7 @@
 //!
 //! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
 //! use ev3dev_rs::robotics::DriveBase;
-//! use ev3dev_rs::parameters::{MotorPort, MotorPort}
+//! use ev3dev_rs::parameters::{MotorPort, SensorPort}
 //! use ev3dev_rs::tools;
 //!
 //! #[tokio::main]
@@ -131,3 +131,6 @@ mod sensor_driver;
 pub mod tools;
 
 pub use error::{Ev3Error, Ev3Result};
+
+#[doc(hidden)]
+pub use futures_concurrency::prelude::*;

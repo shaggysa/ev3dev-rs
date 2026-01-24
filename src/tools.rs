@@ -24,12 +24,5 @@ pub macro join($($fut:expr),+ $(,)?) {
 /// select!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 /// ```
 pub macro select($($fut:expr),+ $(,)?) {
-    // bind each future in the outer scope
-    tokio::pin!($($fut),+);
-
-    tokio::select! {
-        $(
-            res = &mut $fut => res?,
-        )+
-    }
+    ($($fut),+).race().await
 }
