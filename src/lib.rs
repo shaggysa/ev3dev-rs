@@ -7,9 +7,10 @@
 //! extern crate ev3dev_rs;
 //! extern crate tokio;
 //!
+//! use ev3dev_rs::Ev3Result;
 //! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
 //! use ev3dev_rs::robotics::DriveBase;
-//! use ev3dev_rs::parameters::{MotorPort, MotorPort}
+//! use ev3dev_rs::parameters::{MotorPort, MotorPort, Direction}
 //!
 //! #[tokio::main]
 //! async fn main() -> Ev3Result<()> {
@@ -23,7 +24,7 @@
 //!
 //!     println!("Detected color: {}", color_sensor.color()?);
 //!
-//!     let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+//!     let drive = DriveBase::new(&left_motor, &right_motor, 62.4, 130.5)?.with_gyro(&gyro_sensor)?;
 //!
 //!     drive.use_gyro(true)?;
 //!
