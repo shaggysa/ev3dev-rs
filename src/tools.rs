@@ -24,5 +24,6 @@ pub macro join($($fut:expr),+ $(,)?) {
 /// select!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 /// ```
 pub macro select($($fut:expr),+ $(,)?) {
+    use ev3dev_rs::Race;
     ($($fut),+).race().await
 }
