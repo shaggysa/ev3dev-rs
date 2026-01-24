@@ -82,7 +82,7 @@
 //! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
 //! use ev3dev_rs::robotics::DriveBase;
 //! use ev3dev_rs::parameters::{MotorPort, SensorPort}
-//! use ev3dev_rs::tools;
+//! use ev3dev_rs::{join, select};
 //!
 //! #[tokio::main]
 //! async fn main() -> Ev3Result<()> {
@@ -103,11 +103,11 @@
 //!     // join is like pybricks' non-racing multitask
 //!     // it will wait for all actions to complete before moving on
 //!     // if any task returns an error, join will return that error
-//!     tools::join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
+//!     join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 //!
 //!     // select is like pybricks' racing multitask
 //!     // once one action completes, the other(s) will be canceled
-//!     tools::select!(drive.turn(90), attachment_motor.run_until_stalled(45))?
+//!     select!(drive.turn(90), attachment_motor.run_until_stalled(45))?
 //!
 //!     Ok(())
 //! }
