@@ -37,7 +37,7 @@ macro_rules! __select_internal {
 
     // Recursive case: grab head future, add a branch, recurse on tail
     ([$($arms:tt)*], $head:expr $(, $tail:expr)*) => {
-        tokio::pin!(__fut = $head);
+        std::pin::pin!(__fut = $head);
         $crate::__select_internal!(
             [
                 $($arms)*
