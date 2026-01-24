@@ -23,30 +23,13 @@ pub macro join($($fut:expr),+ $(,)?) {
 /// use ev3dev_rs::tools::select;
 /// select!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 /// ```
-pub macro select($($fut:expr),+ $(,)?) {{
-    $crate::__select_internal!([], $($fut),+)
-}}
+pub macro select($($fut:expr),+ $(,)?) {
+    // bind each future in the outer scope
+    tokio::pin!($($fut),+);
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __select_internal {
-    // Final expansion: no more futures
-    ([$($arms:tt)*],) => {
-        tokio::select! { $($arms)* }
-    };
-
-    // Recursive case: grab head future
-    ([$($arms:tt)*], $head:expr $(, $tail:expr)*) => {
-        // bind the future in the outer scope
-        std::pin::pin!(__fut = $head);
-
-        // recursively accumulate the arms
-        $crate::__select_internal!(
-            [
-                $($arms)*
-                res = &mut __fut => res?,
-            ],
-            $($tail),*
-        )
-    };
+    tokio::select! {
+        $(
+            res = &mut $fut => res?,
+        )+
+    }
 }
