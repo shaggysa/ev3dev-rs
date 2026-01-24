@@ -61,4 +61,3 @@ If you want support for a specific feature, please open an Issue.
 Please see [ev3dev-rs-template] for detailed usage instructions.
 
 [ev3dev-rs-template]: https://github.com/shaggysa/ev3dev-rs-template
-
