@@ -13,7 +13,10 @@ pub async fn wait(duration: Duration) {
 /// join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 /// ```
 pub macro join($($fut:expr),+ $(,)?) {
+    // make the user await this to avoid confusion
+    async {
     tokio::try_join!($($fut),+)
+    }
 }
 
 /// A racing multitasker

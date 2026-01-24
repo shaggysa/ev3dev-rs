@@ -105,11 +105,11 @@
 //!     // join is like pybricks' non-racing multitask
 //!     // it will wait for all actions to complete before moving on
 //!     // if either task returns an error, it will return that error
-//!     tools::join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
+//!     tools::join!(drive.straight(100), attachment_motor.run_until_stalled(-45)).await?;
 //!
 //!     // select is like pybricks' racing multitask
 //!     // once one action completes, the other will be canceled
-//!     tools::select!(drive.turn(90), attachment_motor.run_until_stalled(45))?
+//!     let x = tools::select!(drive.turn(90), attachment_motor.run_until_stalled(45)).await?
 //!
 //!     Ok(())
 //! }
