@@ -10,7 +10,7 @@ pub async fn wait(duration: Duration) {
 /// # Examples
 /// ```
 /// use ev3dev_rs::tools::join;
-/// join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
+/// join!(drive.straight(100), attachment_motor.run_until_stalled(-45)).await?;
 /// ```
 pub macro join($($fut:expr),+ $(,)?) {
     // make the user await this to avoid confusion
