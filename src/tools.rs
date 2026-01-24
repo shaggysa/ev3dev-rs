@@ -27,17 +27,20 @@ pub macro select($($fut:expr),+ $(,)?) {{
     $crate::__select_internal!([], $($fut),+)
 }}
 
-#[doc(hidden)]
 #[macro_export]
+#[doc(hidden)]
 macro_rules! __select_internal {
-    // Final case: no more futures, expand select! with all accumulated arms
+    // Final expansion: no more futures
     ([$($arms:tt)*],) => {
         tokio::select! { $($arms)* }
     };
 
-    // Recursive case: grab head future, add a branch, recurse on tail
+    // Recursive case: grab head future
     ([$($arms:tt)*], $head:expr $(, $tail:expr)*) => {
-        std::boxed::Box::pin(__fut = $head);
+        // bind the future in the outer scope
+        std::pin::pin!(__fut = $head);
+
+        // recursively accumulate the arms
         $crate::__select_internal!(
             [
                 $($arms)*
