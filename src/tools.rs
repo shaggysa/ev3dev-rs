@@ -39,7 +39,7 @@ macro_rules! __select_internal {
 
     // Recursive case
     ([$($arms:tt)*], $head:expr $(, $tail:expr)*) => {{
-        let mut __fut = $head;
+        let mut __fut = pin!($head);
 
         $crate::__select_internal!(
             [
