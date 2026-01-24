@@ -23,19 +23,9 @@ pub macro join($($fut:expr),+ $(,)?) {
 /// use ev3dev_rs::tools::select;
 /// select!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
 /// ```
-pub macro select($($fut:expr),+ $(,)?) {{
-    $crate::__select_internal!([], $($fut),+)
-}}
-
-#[doc(hidden)]
-pub macro __select_internal([$($arms:tt)*], $head:expr $(, $tail:expr)*) {{
-    let mut __fut = std::pin::pin!($head);
-
-    __select_internal!(
-        [
-            $($arms)*
-            res = &mut __fut => res?,
-        ],
-        $($tail),*
-    )
-}}
+pub macro select($($fut:expr),+ $(,)?) {
+    let mut __futs = ($($fut),+);
+    tokio::select! {
+        $( res = &mut __futs.${index()} => res?, )+
+    }
+}

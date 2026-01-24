@@ -1,4 +1,5 @@
 #![feature(decl_macro)]
+#![feature(macro_metavar_expr)]
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
