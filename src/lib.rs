@@ -1,5 +1,7 @@
 #![feature(decl_macro)]
 #![feature(macro_metavar_expr)]
+#![allow(incomplete_features)]
+#![feature(ergonomic_clones)]
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
