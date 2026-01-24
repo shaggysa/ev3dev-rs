@@ -107,7 +107,7 @@ impl Motor {
         Ok(())
     }
 
-    /// sets the stop action for the `Motor`
+    /// Sets the stop action for the `Motor`
     pub fn set_stop_action(&self, action: Stop) -> Ev3Result<()> {
         self.driver
             .set_attribute_enum(AttributeName::StopAction, action)
@@ -146,7 +146,7 @@ impl Motor {
 
     /// Units are in milliseconds and must be positive.
     ///
-    /// When set to a non-zero value, the motor speed will decrease from 0 to 100% of max_speed over the span of this setpoint.
+    /// When set to a non-zero value, the motor speed will decrease from 100 to 0% of max_speed over the span of this setpoint.
     ///
     /// This is especially useful for avoiding wheel slip.
     pub fn set_ramp_down_setpoint(&self, sp: u32) -> Ev3Result<()> {
@@ -213,7 +213,7 @@ impl Motor {
         self.wait_for_stop().await
     }
 
-    /// Runs the motor at a constant speed to a towards a target angle.
+    /// Runs the motor at a constant speed towards an target angle.
     ///
     /// Note that the angle is continuous and does not wrap around at 360 degrees.
     ///

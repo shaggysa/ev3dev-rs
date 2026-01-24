@@ -210,7 +210,7 @@ impl<'a> DriveBase<'a> {
     ///
     /// This is especially useful for avoiding wheel slip.
     ///
-    /// The default for `DriveBase` motors 2000.
+    /// The default for `DriveBase` motors is 2000.
     pub fn set_ramp_up_setpoint(&self, sp: u32) -> Ev3Result<()> {
         self.left_motor.set_ramp_up_setpoint(sp)?;
         self.right_motor.set_ramp_up_setpoint(sp)
@@ -222,7 +222,7 @@ impl<'a> DriveBase<'a> {
     ///
     /// This is especially useful for avoiding wheel slip.
     ///
-    /// The default for `DriveBase` motors 1800.
+    /// The default for `DriveBase` motors is 1800.
     pub fn set_ramp_down_setpoint(&self, sp: u32) -> Ev3Result<()> {
         self.left_motor.set_ramp_down_setpoint(sp)?;
         self.right_motor.set_ramp_down_setpoint(sp)
@@ -271,7 +271,9 @@ impl<'a> DriveBase<'a> {
 
     /// Stops the `DriveBase` with the selected stop action.
     ///
-    /// Async driving actions automatically do this
+    /// Async driving functions automatically do this.
+    ///
+    /// See `set_stop_action` to select the stop action.
     pub fn stop(&self) -> Ev3Result<()> {
         self.left_motor.stop_prev_action()?;
         self.right_motor.stop_prev_action()
@@ -375,7 +377,7 @@ impl<'a> DriveBase<'a> {
             .await
     }
 
-    /// Curves with the given radius and a target angle.
+    /// Curves with a given radius and a target angle.
     pub async fn curve<Number>(&self, radius: Number, angle: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
@@ -389,7 +391,7 @@ impl<'a> DriveBase<'a> {
             .await
     }
 
-    /// Turns with the given radius and distance.
+    /// Curves with a given radius and distance.
     pub async fn veer<Number>(&self, radius: Number, distance: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
@@ -409,7 +411,7 @@ impl<'a> DriveBase<'a> {
     ///
     /// If you are having trouble with inaccurate heading readings due to wheel slipping, see `set_ramp_up_setpoint`.
     ///
-    /// Note that the value can vary wildly based on surface.
+    /// Note that the output value can vary wildly based on surface.
     pub async fn find_calibrated_axle_track<Number>(
         &mut self,
         margin_of_error: Number,
@@ -491,7 +493,7 @@ impl<'a> DriveBase<'a> {
         (left_mm + right_mm) / 2
     }
 
-    /// Convert encoder positions to heading (differential between wheels)
+    // Convert encoder positions to heading (differential between wheels)
     fn encoders_to_heading(&self) -> Ev3Result<I32F32> {
         let left_deg = I32F32::from_num(self.left_motor.angle()? - self.left_start_angle);
         let right_deg = I32F32::from_num(self.right_motor.angle()? - self.right_start_angle);

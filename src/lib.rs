@@ -1,3 +1,4 @@
+#![feature(decl_macro)]
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -67,6 +68,47 @@
 //!     // If you have issues with drive wheel slippage, please see "set_ramp_up_setpoint".
 //!     // Even if you perfectly dial this in, using the gyro is still highly recommended to get the most accurate readings.
 //!     drive.find_calibrated_axle_track(50).await?;
+//!
+//!     Ok(())
+//! }
+//! ```
+//! # Async functions
+//!
+//! Because all the `Motor` and `DriveBase` actions are async, you can run them simultaneously.
+//!
+//! ```no_run
+//! extern crate ev3dev_rs;
+//! extern crate tokio;
+//!
+//! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
+//! use ev3dev_rs::robotics::DriveBase;
+//! use ev3dev_rs::parameters::{MotorPort, MotorPort}
+//! use ev3dev_rs::tools;
+//!
+//! #[tokio::main]
+//! async fn main() -> Ev3Result<()> {
+//!
+//!     use ev3dev_rs::parameters::{Direction, SensorPort};
+//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise)?;
+//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise)?;
+//!
+//!     let attachment_motor = Motor::new(MotorPort::OutB, Direction::Clockwise)?;
+//!
+//!     let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
+//!
+//!     // find_calibrated_axle_track requires a mutable reference
+//!     let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+//!
+//!     drive.use_gyro(true)?;
+//!
+//!     // join is like pybricks' non-racing multitask
+//!     // it will wait for all actions to complete before moving on
+//!     // if either task returns an error, it will return that error
+//!     tools::join!(drive.straight(100), attachment_motor.run_until_stalled(-45))?;
+//!
+//!     // select is like pybricks' racing multitask
+//!     // once one action completes, the other will be canceled
+//!     tools::select!(drive.turn(90), attachment_motor.run_until_stalled(45))?
 //!
 //!     Ok(())
 //! }
