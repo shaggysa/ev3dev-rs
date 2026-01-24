@@ -1,12 +1,89 @@
+#![deny(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
+//! # Basic usage
+//!
+//! ```no_run
+//! extern crate ev3dev_rs;
+//! extern crate tokio;
+//!
+//! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
+//! use ev3dev_rs::robotics::DriveBase;
+//! use ev3dev_rs::parameters::{MotorPort, MotorPort}
+//!
+//! #[tokio::main]
+//! async fn main() -> Ev3Result<()> {
+//!
+//!     use ev3dev_rs::parameters::{Direction, SensorPort};
+//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise)?;
+//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise)?;
+//!
+//!     let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
+//!     let color_sensor = ColorSensor::new(SensorPort::In4)?;
+//!
+//!     println!("Detected color: {}", color_sensor.color()?);
+//!
+//!     let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+//!
+//!     drive.use_gyro(true)?;
+//!
+//!     drive.straight(500).await?;
+//!     drive.turn(90).await?;
+//!     drive.curve(600, 90).await?;
+//!     drive.veer(600, 500).await?;
+//!
+//!     Ok(())
+//! }
+//! ```
+//!
+//! # `DriveBase` calibration
+//!
+//! ```no_run
+//! extern crate ev3dev_rs;
+//! extern crate tokio;
+//!
+//! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
+//! use ev3dev_rs::robotics::DriveBase;
+//! use ev3dev_rs::parameters::{MotorPort, MotorPort}
+//!
+//! #[tokio::main]
+//! async fn main() -> Ev3Result<()> {
+//!
+//!     use ev3dev_rs::parameters::{Direction, SensorPort};
+//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise)?;
+//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise)?;
+//!
+//!     // A gyro sensor is required for calibration.
+//!     let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
+//!
+//!     // find_calibrated_axle_track requires a mutable reference
+//!     let mut drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+//!
+//!     drive.use_gyro(true)?;
+//!
+//!     // This will test a bunch of axle tracks, compare them with the gyro, and report the optimal value.
+//!     // Note that it is highly experimental and different surfaces may heavily affect the reported value.
+//!     // If you have issues with drive wheel slippage, please see "set_ramp_up_setpoint".
+//!     // Even if you perfectly dial this in, using the gyro is still highly recommended to get the most accurate readings.
+//!     drive.find_calibrated_axle_track(50).await?;
+//!
+//!     Ok(())
+//! }
+//! ```
+
 mod attribute;
 mod enum_string;
 mod error;
 mod motor_driver;
+/// Parameters used in the ev3dev_rs crate.
 pub mod parameters;
 mod pid;
+/// Devices that can connect to the robot.
 pub mod pupdevices;
+/// Higher level abstractions.
 pub mod robotics;
 mod sensor_driver;
+/// Additional tools.
 pub mod tools;
 
 pub use error::{Ev3Error, Ev3Result};

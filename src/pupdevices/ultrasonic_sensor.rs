@@ -8,7 +8,7 @@ use crate::{
 /// A stock EV3 ultrasonic sensor.
 ///
 /// # Examples
-/// ```
+/// ``` no_run
 /// use ev3dev_rs::pupdevices::UltrasonicSensor;
 /// use ev3dev_rs::parameters::SensorPort;
 ///

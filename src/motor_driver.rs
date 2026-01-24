@@ -49,7 +49,7 @@ impl MotorDriver {
         if let Some(attr) = self.attributes.borrow().get(&name) {
             attr.get()
         } else {
-            // if the value if not in the hashmap, create a new attribue,
+            // if the value is not in the hashmap, create a new attribute,
             // get its current value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
             let val = attr.get()?;
@@ -65,7 +65,7 @@ impl MotorDriver {
         if let Some(attr) = self.attributes.borrow().get(&name) {
             attr.set(value.as_str())
         } else {
-            // if the value if not in the hashmap, create a new attribue,
+            // if the value is not in the hashmap, create a new attribute,
             // set its value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
             attr.set(value.as_str())?;
@@ -81,7 +81,7 @@ impl MotorDriver {
         if let Some(attr) = self.attributes.borrow().get(&name) {
             attr.set(&value.to_string())
         } else {
-            // if the value if not in the hashmap, create a new attribue,
+            // if the value is not in the hashmap, create a new attribute,
             // set its value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
             attr.set(&value.to_string())?;

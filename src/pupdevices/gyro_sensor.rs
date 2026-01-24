@@ -8,7 +8,7 @@ use crate::{
 /// Stock EV3 Gyro Sensor
 ///
 /// # Examples
-/// ```
+/// ``` no_run
 /// use ev3dev_rs::pupdevices::GyroSensor;
 /// use ev3dev_rs::parameters::SensorPort;
 ///
@@ -66,7 +66,7 @@ impl GyroSensor {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ``` no_run
     /// let (heading, velocity) = sensor.heading_and_velocity()?;
     /// assert_eq!(heading, sensor.heading()?);
     /// assert_eq!(velocity, sensor.angular_velocity()?);

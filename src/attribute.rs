@@ -186,7 +186,7 @@ impl Attribute {
     pub(crate) fn get(&self) -> Ev3Result<String> {
         match self.mode {
             FileMode::Read | FileMode::ReadWrite => {
-                let mut fd = self.fd.lock().unwrap();
+                let mut fd = self.fd.lock().expect("Tried to use a poisoned lock");
                 let mut buffer = String::new();
                 fd.seek(SeekFrom::Start(0))
                     .map_err(|e| Ev3Error::ReadAttributeFailure {
@@ -213,7 +213,7 @@ impl Attribute {
     pub(crate) fn set(&self, value: &str) -> Ev3Result<()> {
         match self.mode {
             FileMode::Write | FileMode::ReadWrite => {
-                let mut fd = self.fd.lock().unwrap();
+                let mut fd = self.fd.lock().expect("Tried to use a poisoned lock");
                 fd.seek(SeekFrom::Start(0))
                     .map_err(|e| Ev3Error::ReadAttributeFailure {
                         filename: self.path.clone(),

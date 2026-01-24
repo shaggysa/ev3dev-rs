@@ -117,7 +117,7 @@ impl InfraredSensor {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ``` no_run
     /// let (heading, distance) = infrared_sensor.seek_channel_3()?;
     /// ```
     #[inline]
@@ -134,7 +134,7 @@ impl InfraredSensor {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ``` no_run
     /// let (heading, distance) = infrared_sensor.seek_channel_4()?;
     /// ```
     #[inline]

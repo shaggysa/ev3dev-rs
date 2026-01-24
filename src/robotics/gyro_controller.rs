@@ -32,6 +32,19 @@ pub struct GyroController<'a> {
 }
 
 impl<'a> GyroController<'a> {
+    /// Create a new `GyroController` with the given gyro sensors.
+    ///
+    /// # Examples
+    ///
+    /// ``` no_run
+    /// use ev3dev_rs::pupdevices::GyroSensor;
+    /// use ev3dev_rs::robotics::GyroController;
+    ///
+    /// let left_gyro = GyroSensor::new(SensorPort::In1)?;
+    /// let right_gyro = GyroSensor::new(SensorPort::In4)?;
+    ///
+    /// let controller = GyroController::new(vec![gyro1, gyro2])?;
+    /// ```
     pub fn new(gyros: Vec<&'a GyroSensor>) -> Ev3Result<Self> {
         let mut gyros_with_offsets = Vec::new();
         for gyro in gyros {
@@ -43,6 +56,7 @@ impl<'a> GyroController<'a> {
         })
     }
 
+    /// Gets the average heading of all contained gyros.
     pub fn heading(&self) -> Ev3Result<I32F32> {
         let mut sum = I32F32::from_num(0.0);
         for (gyro, offset) in self.gyros.borrow().iter() {
@@ -52,6 +66,7 @@ impl<'a> GyroController<'a> {
         Ok(sum / I32F32::from_num(self.gyros.borrow().len()))
     }
 
+    /// Gets the average angular velocity of all contained gyros.
     pub fn angular_velocity(&self) -> Ev3Result<I32F32> {
         let mut sum = I32F32::from_num(0.0);
         for (gyro, _) in self.gyros.borrow().iter() {
@@ -61,6 +76,7 @@ impl<'a> GyroController<'a> {
         Ok(sum / I32F32::from_num(self.gyros.borrow().len()))
     }
 
+    /// Resets the heading of the controller to zero.
     pub fn reset(&self) -> Ev3Result<()> {
         for (gyro, heading) in self.gyros.borrow_mut().iter_mut() {
             *heading = gyro.heading()?;

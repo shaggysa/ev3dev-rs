@@ -1,8 +1,8 @@
-use crate::Ev3Error;
 use crate::pid::Pid;
 use crate::pupdevices::GyroSensor;
 use crate::robotics::GyroController;
-use crate::{Ev3Result, parameters::Stop, pupdevices::Motor};
+use crate::Ev3Error;
+use crate::{parameters::Stop, pupdevices::Motor, Ev3Result};
 use fixed::traits::{LossyInto, ToFixed};
 use fixed::types::I32F32;
 use scopeguard::defer;
@@ -10,6 +10,41 @@ use std::cell::Cell;
 use std::time::Duration;
 use tokio::time::interval;
 
+/// A pybricks-like `DriveBase`.
+///
+/// Using gyroscope(s) is highly recommended in order to get the most accurate actions
+///
+/// # Examples
+///
+/// ``` no_run
+/// use ev3dev_rs::parameters::{Direction, MotorPort, SensorPort, Stop};
+/// use ev3dev_rs::pupdevices::{Motor, GyroSensor};
+/// use ev3dev_rs::robotics::DriveBase;
+///
+/// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
+/// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+///
+/// // no gyro
+/// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?;
+///
+/// // with gyro
+/// let gyro = GyroSensor::new(SensorPort::In1)?;
+///
+/// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+///
+/// // you have to explicitly enable the gyro
+/// drive.use_gyro(true)?;
+///
+/// // default is 500
+/// drive.set_straight_speed(600)?;
+///
+/// // default should be coast
+/// // unlike pybricks, the stop action doesn't affect whether the robot tracks it's position and heading
+/// drive.set_stop_action(Stop::Hold)?;
+///
+/// drive.straight(500).await?;
+/// drive.turn(90).await?;
+/// ```
 pub struct DriveBase<'a> {
     left_motor: &'a Motor,
     right_motor: &'a Motor,
@@ -32,6 +67,11 @@ pub struct DriveBase<'a> {
 }
 
 impl<'a> DriveBase<'a> {
+    /// Creates a new `DriveBase` with the defined parameters.
+    ///
+    /// Wheel diameter and axle track are in mm.
+    ///
+    /// Using a gyroscope is highly recommended, see `with_gyro` or `with_gyros`.
     pub fn new<Number>(
         left_motor: &'a Motor,
         right_motor: &'a Motor,
@@ -41,8 +81,8 @@ impl<'a> DriveBase<'a> {
     where
         Number: ToFixed,
     {
-        left_motor.set_ramp_up_setpoint(5000)?;
-        right_motor.set_ramp_up_setpoint(5000)?;
+        left_motor.set_ramp_up_setpoint(2000)?;
+        right_motor.set_ramp_up_setpoint(2000)?;
 
         left_motor.set_ramp_down_setpoint(1800)?;
         right_motor.set_ramp_down_setpoint(1800)?;
@@ -69,7 +109,29 @@ impl<'a> DriveBase<'a> {
         })
     }
 
-    /// Adds a single gyro sensor to the drive base.
+    /// Adds a single gyro sensor to the `DriveBase`.
+    ///
+    /// # Examples
+    ///
+    /// ``` no_run
+    /// use ev3dev_rs::parameters::{Direction, MotorPort, SensorPort, Stop};
+    ///
+    /// use ev3dev_rs::pupdevices::{Motor, GyroSensor};
+    ///
+    /// use ev3dev_rs::robotics::DriveBase;
+    ///
+    /// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
+    ///
+    /// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+    ///
+    /// let gyro = GyroSensor::new(SensorPort::In1)?;
+    ///
+    /// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+    ///
+    /// // you have to explicitly enable the gyro
+    ///
+    /// drive.use_gyro(true)?;
+    /// ```
     pub fn with_gyro<'b>(mut self, gyro_sensor: &'b GyroSensor) -> Ev3Result<Self>
     where
         'b: 'a,
@@ -78,7 +140,31 @@ impl<'a> DriveBase<'a> {
         Ok(self)
     }
 
-    /// Adds multiple gyro sensors to the drive base.
+    /// Adds multiple gyro sensors to the `DriveBase`.
+    ///
+    /// # Examples
+    ///
+    /// ``` no_run
+    /// use ev3dev_rs::parameters::{Direction, MotorPort, SensorPort, Stop};
+    ///
+    /// use ev3dev_rs::pupdevices::{Motor, GyroSensor};
+    ///
+    /// use ev3dev_rs::robotics::DriveBase;
+    ///
+    /// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
+    ///
+    /// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+    ///
+    /// let left_gyro = GyroSensor::new(SensorPort::In1)?;
+    ///
+    /// let right_gyro = GyroSensor::new(SensorPort::In4)?;
+    ///
+    /// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyros(vec![ &left_gyro, &right_gyro ])?;
+    ///
+    /// // you have to explicitly enable the gyro
+    ///
+    /// drive.use_gyro(true)?;
+    /// ```
     pub fn with_gyros<'b>(mut self, gyro_sensors: Vec<&'b GyroSensor>) -> Ev3Result<Self>
     where
         'b: 'a,
@@ -87,6 +173,9 @@ impl<'a> DriveBase<'a> {
         Ok(self)
     }
 
+    /// True makes the `DriveBase` use the gyro, while false makes the `DriveBase` use the motor encoders.
+    ///
+    /// Using the gyro is highly recommended for accurate drive actions.
     pub fn use_gyro(&self, use_gyro: bool) -> Ev3Result<()> {
         if use_gyro && self.gyros.is_none() {
             return Err(Ev3Error::NoSensorProvided);
@@ -95,6 +184,9 @@ impl<'a> DriveBase<'a> {
         Ok(())
     }
 
+    /// Sets the straight speed in motor degrees per second.
+    ///
+    /// The default is 500 and the max is 1000.
     pub fn set_straight_speed<Number>(&self, straight_speed: Number)
     where
         Number: ToFixed,
@@ -102,6 +194,9 @@ impl<'a> DriveBase<'a> {
         self.straight_speed.set(I32F32::from_num(straight_speed));
     }
 
+    /// Sets the max turn speed in motor degrees per second.
+    ///
+    /// The default is 500 and the max is 1000.
     pub fn set_turn_speed<Number>(&self, turn_speed: Number)
     where
         Number: ToFixed,
@@ -109,11 +204,40 @@ impl<'a> DriveBase<'a> {
         self.turn_speed.set(I32F32::from_num(turn_speed));
     }
 
+    /// Units are in milliseconds and must be positive.
+    ///
+    /// When set to a non-zero value, the motor speed will increase from 0 to 100% of max_speed over the span of this setpoint.
+    ///
+    /// This is especially useful for avoiding wheel slip.
+    ///
+    /// The default for `DriveBase` motors 2000.
+    pub fn set_ramp_up_setpoint(&self, sp: u32) -> Ev3Result<()> {
+        self.left_motor.set_ramp_up_setpoint(sp)?;
+        self.right_motor.set_ramp_up_setpoint(sp)
+    }
+
+    /// Units are in milliseconds and must be positive.
+    ///
+    /// When set to a non-zero value, the motor speed will decrease from 0 to 100% of max_speed over the span of this setpoint.
+    ///
+    /// This is especially useful for avoiding wheel slip.
+    ///
+    /// The default for `DriveBase` motors 1800.
+    pub fn set_ramp_down_setpoint(&self, sp: u32) -> Ev3Result<()> {
+        self.left_motor.set_ramp_down_setpoint(sp)?;
+        self.right_motor.set_ramp_down_setpoint(sp)
+    }
+    /// Sets the stop action of the `DriveBase`
+    ///
+    /// Unlike pybricks, this doesn't affect whether the `DriveBase` tracks heading and distance
     pub fn set_stop_action(&self, action: Stop) -> Ev3Result<()> {
         self.left_motor.set_stop_action(action)?;
         self.right_motor.set_stop_action(action)
     }
 
+    /// Sets the distance PID settings
+    ///
+    /// default: 10, 0, 8, 0, 0
     pub fn distance_pid_settings<Number>(
         &self,
         kp: Number,
@@ -128,6 +252,9 @@ impl<'a> DriveBase<'a> {
             .settings(kp, ki, kd, integral_deadzone, integral_rate);
     }
 
+    /// Sets the heading PID settings
+    ///
+    /// default: 10, 0, 5, 0, 0
     pub fn heading_pid_settings<Number>(
         &self,
         kp: Number,
@@ -142,6 +269,9 @@ impl<'a> DriveBase<'a> {
             .settings(kp, ki, kd, integral_deadzone, integral_rate);
     }
 
+    /// Stops the `DriveBase` with the selected stop action.
+    ///
+    /// Async driving actions automatically do this
     pub fn stop(&self) -> Ev3Result<()> {
         self.left_motor.stop_prev_action()?;
         self.right_motor.stop_prev_action()
@@ -227,6 +357,7 @@ impl<'a> DriveBase<'a> {
         Ok(())
     }
 
+    /// Drives straight by the given distance in mm.
     pub async fn straight<Number>(&self, distance: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
@@ -235,6 +366,7 @@ impl<'a> DriveBase<'a> {
             .await
     }
 
+    /// Turns by the angle in degrees.
     pub async fn turn<Number>(&self, angle: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
@@ -243,6 +375,7 @@ impl<'a> DriveBase<'a> {
             .await
     }
 
+    /// Curves with the given radius and a target angle.
     pub async fn curve<Number>(&self, radius: Number, angle: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
@@ -256,6 +389,7 @@ impl<'a> DriveBase<'a> {
             .await
     }
 
+    /// Turns with the given radius and distance.
     pub async fn veer<Number>(&self, radius: Number, distance: Number) -> Ev3Result<()>
     where
         Number: ToFixed,
@@ -269,6 +403,13 @@ impl<'a> DriveBase<'a> {
             .await
     }
 
+    /// Experimental function to find the best axle track for the robot
+    ///
+    /// This should print out the ideal axle track once it is finished testing.
+    ///
+    /// If you are having trouble with inaccurate heading readings due to wheel slipping, see `set_ramp_up_setpoint`.
+    ///
+    /// Note that the value can vary wildly based on surface.
     pub async fn find_calibrated_axle_track<Number>(
         &mut self,
         margin_of_error: Number,

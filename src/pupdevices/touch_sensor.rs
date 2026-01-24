@@ -8,7 +8,7 @@ use crate::{
 /// A stock EV3 touch sensor.
 ///
 /// # Examples
-/// ```
+/// ``` no_run
 /// use ev3dev_rs::pupdevices::TouchSensor;
 /// use ev3dev_rs::parameters::SensorPort;
 ///

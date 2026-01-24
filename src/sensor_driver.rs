@@ -82,7 +82,7 @@ impl SensorDriver {
                     )
                     && address == port
                 {
-                    if driver == sensor_type {
+                    return if driver == sensor_type {
                         let mut attributes = HashMap::new();
                         let mode_attr = Attribute::new(
                             direntry.join(AttributeName::Mode.to_string()),
@@ -93,17 +93,17 @@ impl SensorDriver {
 
                         attributes.insert(AttributeName::Mode, mode_attr);
 
-                        return Ok(Self {
+                        Ok(Self {
                             base_path: direntry,
                             attributes: RefCell::new(attributes),
                             mode: Cell::new(mode),
-                        });
+                        })
                     } else {
-                        return Err(Ev3Error::IncorrectSensorType {
+                        Err(Ev3Error::IncorrectSensorType {
                             expected: sensor_type,
                             found: driver,
-                        });
-                    }
+                        })
+                    };
                 }
             }
         }
@@ -118,7 +118,7 @@ impl SensorDriver {
         if let Some(attr) = self.attributes.borrow().get(&name) {
             attr.get()
         } else {
-            // if the value if not in the hashmap, create a new attribue,
+            // if the value is not in the hashmap, create a new attribute,
             // get its current value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
             let val = attr.get()?;
@@ -134,7 +134,7 @@ impl SensorDriver {
         if let Some(attr) = self.attributes.borrow().get(&name) {
             attr.set(value.as_str())
         } else {
-            // if the value if not in the hashmap, create a new attribue,
+            // if the value is not in the hashmap, create a new attribute,
             // set its value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
             attr.set(value.as_str())?;

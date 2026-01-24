@@ -54,7 +54,7 @@ impl Motor {
     ///
     /// #Examples
     ///
-    /// ```
+    /// ``` no_run
     /// use ev3dev_rs::pupdevices::Motor;
     /// use ev3dev_rs::parameters::{MotorPort, Direction};
     ///
@@ -135,10 +135,20 @@ impl Motor {
             .set_attribute(AttributeName::SpeedSetpoint, speed)
     }
 
+    /// Units are in milliseconds and must be positive.
+    ///
+    /// When set to a non-zero value, the motor speed will increase from 0 to 100% of max_speed over the span of this setpoint.
+    ///
+    /// This is especially useful for avoiding wheel slip.
     pub fn set_ramp_up_setpoint(&self, sp: u32) -> Ev3Result<()> {
         self.driver.set_attribute(AttributeName::RampUpSetpoint, sp)
     }
 
+    /// Units are in milliseconds and must be positive.
+    ///
+    /// When set to a non-zero value, the motor speed will decrease from 0 to 100% of max_speed over the span of this setpoint.
+    ///
+    /// This is especially useful for avoiding wheel slip.
     pub fn set_ramp_down_setpoint(&self, sp: u32) -> Ev3Result<()> {
         self.driver
             .set_attribute(AttributeName::RampDownSetpoint, sp)
@@ -203,7 +213,7 @@ impl Motor {
         self.wait_for_stop().await
     }
 
-    /// Runs the motor at a constant speed to a torwards a target angle.
+    /// Runs the motor at a constant speed to a towards a target angle.
     ///
     /// Note that the angle is continuous and does not wrap around at 360 degrees.
     ///
@@ -223,7 +233,7 @@ impl Motor {
 
     /// Runs the motor at a constant speed.
     ///
-    /// The motor will run at this speed until manually stopped or you give it a new command.
+    /// The motor will run at this speed until manually stopped, or you give it a new command.
     pub fn run(&self, speed: i32) -> Ev3Result<()> {
         self.set_speed(speed)?;
 
@@ -264,7 +274,7 @@ impl Motor {
         Ok(())
     }
 
-    /// Rotates the motor at a given duty cycle percentage (-100 to 100) until stopped or you give it a new command.
+    /// Rotates the motor at a given duty cycle percentage (-100 to 100) until stopped, or you give it a new command.
     pub fn dc(&self, duty: i32) -> Ev3Result<()> {
         if self.last_command.get() != Some(Command::RunDirect) {
             self.send_command(Command::RunDirect)?;

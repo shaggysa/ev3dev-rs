@@ -39,6 +39,7 @@ pub_enum_str! {
 }
 
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum Color {
     None,
     Black,
@@ -89,8 +90,9 @@ impl FromStr for Color {
     }
 }
 
-/// a list of buttons on the EV3 beacon remote
+/// A list of buttons on the EV3 beacon remote.
 #[derive(PartialEq, Eq, Hash, Debug)]
+#[allow(missing_docs)]
 pub enum Button {
     RedUp,
     BlueUp,

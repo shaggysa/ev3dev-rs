@@ -11,6 +11,7 @@ pub trait AsStr {
 macro_rules! enum_str {
     ($name:ident, $(($key:ident, $value:expr),)*) => {
        #[derive(Debug, PartialEq, Copy, Clone, Eq, Hash)]
+       #[allow(missing_docs)]
        enum $name
         {
             $($key),*
@@ -47,6 +48,7 @@ macro_rules! enum_str {
 macro_rules! crate_enum_str {
     ($name:ident, $(($key:ident, $value:expr),)*) => {
        #[derive(Debug, PartialEq, Copy, Clone)]
+       #[allow(missing_docs)]
        pub(crate) enum $name
         {
             $($key),*
@@ -83,6 +85,7 @@ macro_rules! crate_enum_str {
 macro_rules! pub_enum_str {
     ($name:ident, $(($key:ident, $value:expr),)*) => {
        #[derive(Debug, PartialEq, Copy, Clone)]
+       #[allow(missing_docs)]
        pub enum $name
         {
             $($key),*

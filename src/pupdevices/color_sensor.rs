@@ -9,7 +9,7 @@ use std::str::FromStr;
 /// Stock EV3 Color Sensor
 ///
 /// # Examples
-/// ```
+/// ``` no_run
 /// use ev3dev_rs::pupdevices::ColorSensor;
 /// use ev3dev_rs::parameters::{SensorPort, Color};
 ///
@@ -66,7 +66,7 @@ impl ColorSensor {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ``` no_run
     /// let (r, g, b) = sensor.raw_rgb()?;
     /// ```
     pub fn raw_rgb(&self) -> Ev3Result<(u16, u16, u16)> {
