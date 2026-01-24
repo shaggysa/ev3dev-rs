@@ -1,5 +1,9 @@
 [package]
 name = "ev3dev-rs"
+license = "GPL-3"
+readme = "README.md"
+description = "High level pybricks-like rust bindings for e3dev"
+repository = "https://github.com/shaggysa/ev3dev-rs"
 version = "0.1.0"
 edition = "2024"
 
