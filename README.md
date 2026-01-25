@@ -36,6 +36,10 @@ async fn main() -> Ev3Result<()> {
 }
 ```
 
+Please see [ev3dev-rs-template] for detailed usage instructions.
+
+[ev3dev-rs-template]: https://github.com/shaggysa/ev3dev-rs-template
+
 # Supported features
 
 ### Motors:
@@ -55,9 +59,3 @@ async fn main() -> Ev3Result<()> {
 Hitechnic sensors, NXT sensors, and hub functions (Buttons, Leds, Screen, Sound) are not currently supported.
 
 If you want support for a specific feature, please open an Issue.
-
-# Usage
-
-Please see [ev3dev-rs-template] for detailed usage instructions.
-
-[ev3dev-rs-template]: https://github.com/shaggysa/ev3dev-rs-template
