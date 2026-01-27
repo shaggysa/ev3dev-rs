@@ -36,7 +36,7 @@ async fn main() -> Ev3Result<()> {
 }
 ```
 
-Please see [ev3dev-rs-template] for detailed usage instructions.
+Please see [ev3dev-rs-template] for an example project and detailed usage instructions.
 
 [ev3dev-rs-template]: https://github.com/shaggysa/ev3dev-rs-template
 

@@ -4,7 +4,7 @@ license = "GPL-3.0-or-later"
 readme = "README.md"
 description = "High level pybricks-like rust bindings for e3dev"
 repository = "https://github.com/shaggysa/ev3dev-rs"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 
 [dependencies]
