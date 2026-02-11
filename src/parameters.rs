@@ -38,7 +38,7 @@ pub_enum_str! {
     (Hold, "hold"),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[allow(missing_docs)]
 pub enum Color {
     None,
