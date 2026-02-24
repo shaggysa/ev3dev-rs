@@ -19,10 +19,10 @@ use crate::pupdevices::GyroSensor;
 /// let gyro1 = GyroSensor::new(SensorPort::In1)?;
 /// let gyro2 = GyroSensor::new(SensorPort::In2)?;
 ///
-/// let controller = GyroController::new(vec![gyro1, gyro2])?;
+/// let controller = GyroController::new(vec![gyro1, gyro2]).await?;
 ///
-/// let heading = controller.heading()?;
-/// let angular_velocity = controller.angular_velocity()?;
+/// let heading = controller.heading().await?;
+/// let angular_velocity = controller.angular_velocity().await?;
 ///
 /// println!("Heading: {}", heading);
 /// println!("Angular Velocity: {}", angular_velocity);
@@ -45,10 +45,10 @@ impl<'a> GyroController<'a> {
     ///
     /// let controller = GyroController::new(vec![&gyro1, &gyro2])?;
     /// ```
-    pub fn new(gyros: Vec<&'a GyroSensor>) -> Ev3Result<Self> {
+    pub async fn new(gyros: Vec<&'a GyroSensor>) -> Ev3Result<Self> {
         let mut gyros_with_offsets = Vec::new();
         for gyro in gyros {
-            let heading = gyro.heading()?;
+            let heading = gyro.heading().await?;
             gyros_with_offsets.push((gyro, heading));
         }
         Ok(Self {
@@ -57,29 +57,29 @@ impl<'a> GyroController<'a> {
     }
 
     /// Gets the average heading of all contained gyros.
-    pub fn heading(&self) -> Ev3Result<I32F32> {
+    pub async fn heading(&self) -> Ev3Result<I32F32> {
         let mut sum = I32F32::from_num(0.0);
         for (gyro, offset) in self.gyros.borrow().iter() {
-            sum += I32F32::from_num(gyro.heading()? - offset);
+            sum += I32F32::from_num(gyro.heading().await? - offset);
         }
 
         Ok(sum / I32F32::from_num(self.gyros.borrow().len()))
     }
 
     /// Gets the average angular velocity of all contained gyros.
-    pub fn angular_velocity(&self) -> Ev3Result<I32F32> {
+    pub async fn angular_velocity(&self) -> Ev3Result<I32F32> {
         let mut sum = I32F32::from_num(0.0);
         for (gyro, _) in self.gyros.borrow().iter() {
-            sum += I32F32::from_num(gyro.angular_velocity()?);
+            sum += I32F32::from_num(gyro.angular_velocity().await?);
         }
 
         Ok(sum / I32F32::from_num(self.gyros.borrow().len()))
     }
 
     /// Resets the heading of the controller to zero.
-    pub fn reset(&self) -> Ev3Result<()> {
+    pub async fn reset(&self) -> Ev3Result<()> {
         for (gyro, heading) in self.gyros.borrow_mut().iter_mut() {
-            *heading = gyro.heading()?;
+            *heading = gyro.heading().await?;
         }
         Ok(())
     }

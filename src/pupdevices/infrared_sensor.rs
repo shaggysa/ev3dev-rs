@@ -35,43 +35,42 @@ impl InfraredSensor {
     /// and that the percentage does not scale linearly with distance.
     ///
     /// If you want to get an accurate distance measurement, you should use an `UltrasonicSensor`.
-    pub fn proximity(&self) -> Ev3Result<u8> {
-        if self.driver.mode.get() != SensorMode::InfraredProximity {
-            self.driver.set_mode(SensorMode::InfraredProximity)?;
-        }
-        Ok(self.driver.read_attribute(AttributeName::Value0)?.parse()?)
+    pub async fn proximity(&self) -> Ev3Result<u8> { 
+        self.driver.set_mode(SensorMode::InfraredProximity).await?;
+        
+        Ok(self.driver.read_attribute(AttributeName::Value0).await?.parse()?)
     }
 
     #[inline]
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 1.
     ///
     /// Note that the set will be empty if three or more buttons are pressed.
-    pub fn get_remote_channel_1_buttons(&self) -> Ev3Result<HashSet<Button>> {
-        self.get_remote_buttons(AttributeName::Value0)
+    pub async fn get_remote_channel_1_buttons(&self) -> Ev3Result<HashSet<Button>> {
+        self.get_remote_buttons(AttributeName::Value0).await
     }
 
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 2.
     ///
     /// Note that the set will be empty if three or more buttons are pressed.
     #[inline]
-    pub fn get_remote_channel_2_buttons(&self) -> Ev3Result<HashSet<Button>> {
-        self.get_remote_buttons(AttributeName::Value1)
+    pub async fn get_remote_channel_2_buttons(&self) -> Ev3Result<HashSet<Button>> {
+        self.get_remote_buttons(AttributeName::Value1).await
     }
 
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 3.
     ///
     /// Note that the set will be empty if three or more buttons are pressed.
     #[inline]
-    pub fn get_remote_channel_3_buttons(&self) -> Ev3Result<HashSet<Button>> {
-        self.get_remote_buttons(AttributeName::Value2)
+    pub async fn get_remote_channel_3_buttons(&self) -> Ev3Result<HashSet<Button>> {
+        self.get_remote_buttons(AttributeName::Value2).await
     }
 
     /// Get a `HashSet` of buttons currently pressed on the remote control channel 4.
     ///
     /// Note that the set will be empty if three or more buttons are pressed.
     #[inline]
-    pub fn get_remote_channel_4_buttons(&self) -> Ev3Result<HashSet<Button>> {
-        self.get_remote_buttons(AttributeName::Value3)
+    pub async fn get_remote_channel_4_buttons(&self) -> Ev3Result<HashSet<Button>> {
+        self.get_remote_buttons(AttributeName::Value3).await
     }
 
     /// Seeks a remote control in beacon mode on channel 1.
@@ -84,11 +83,11 @@ impl InfraredSensor {
     /// # Examples
     ///
     /// ```
-    /// let (heading, distance) = infrared_sensor.seek_channel_1()?;
+    /// let (heading, distance) = infrared_sensor.seek_channel_1().await?;
     /// ```
     #[inline]
-    pub fn seek_channel_1(&self) -> Ev3Result<(i8, i8)> {
-        self.seek(AttributeName::Value0, AttributeName::Value1)
+    pub async fn seek_channel_1(&self) -> Ev3Result<(i8, i8)> {
+        self.seek(AttributeName::Value0, AttributeName::Value1).await
     }
 
     /// Seeks a remote control in beacon mode on channel 2.
@@ -101,11 +100,11 @@ impl InfraredSensor {
     /// # Examples
     ///
     /// ```
-    /// let (heading, distance) = infrared_sensor.seek_channel_2()?;
+    /// let (heading, distance) = infrared_sensor.seek_channel_2().await?;
     /// ```
     #[inline]
-    pub fn seek_channel_2(&self) -> Ev3Result<(i8, i8)> {
-        self.seek(AttributeName::Value2, AttributeName::Value3)
+    pub async fn seek_channel_2(&self) -> Ev3Result<(i8, i8)> {
+        self.seek(AttributeName::Value2, AttributeName::Value3).await
     }
 
     /// Seeks a remote control in beacon mode on channel 3.
@@ -118,11 +117,11 @@ impl InfraredSensor {
     /// # Examples
     ///
     /// ``` no_run
-    /// let (heading, distance) = infrared_sensor.seek_channel_3()?;
+    /// let (heading, distance) = infrared_sensor.seek_channel_3().await?;
     /// ```
     #[inline]
-    pub fn seek_channel_3(&self) -> Ev3Result<(i8, i8)> {
-        self.seek(AttributeName::Value4, AttributeName::Value5)
+    pub async fn seek_channel_3(&self) -> Ev3Result<(i8, i8)> {
+        self.seek(AttributeName::Value4, AttributeName::Value5).await
     }
 
     /// Seeks a remote control in beacon mode on channel 4.
@@ -135,19 +134,19 @@ impl InfraredSensor {
     /// # Examples
     ///
     /// ``` no_run
-    /// let (heading, distance) = infrared_sensor.seek_channel_4()?;
+    /// let (heading, distance) = infrared_sensor.seek_channel_4().await?;
     /// ```
     #[inline]
-    pub fn seek_channel_4(&self) -> Ev3Result<(i8, i8)> {
-        self.seek(AttributeName::Value6, AttributeName::Value7)
+    pub async fn seek_channel_4(&self) -> Ev3Result<(i8, i8)> {
+        self.seek(AttributeName::Value6, AttributeName::Value7).await
     }
 
-    fn get_remote_buttons(&self, attr: AttributeName) -> Ev3Result<HashSet<Button>> {
-        if self.driver.mode.get() != SensorMode::InfraredRemote {
-            self.driver.set_mode(SensorMode::InfraredRemote)?;
-        }
+    async fn get_remote_buttons(&self, attr: AttributeName) -> Ev3Result<HashSet<Button>> {
 
-        let val = self.driver.read_attribute(attr)?;
+        self.driver.set_mode(SensorMode::InfraredRemote).await?;
+        
+
+        let val = self.driver.read_attribute(attr).await?;
         let mut set = HashSet::new();
 
         match val.parse::<u8>()? {
@@ -192,13 +191,13 @@ impl InfraredSensor {
         Ok(set)
     }
 
-    fn seek(&self, attr1: AttributeName, attr2: AttributeName) -> Ev3Result<(i8, i8)> {
-        if self.driver.mode.get() != SensorMode::InfraredSeek {
-            self.driver.set_mode(SensorMode::InfraredSeek)?;
-        }
+    async fn seek(&self, attr1: AttributeName, attr2: AttributeName) -> Ev3Result<(i8, i8)> {
+
+        self.driver.set_mode(SensorMode::InfraredSeek).await?;
+        
         Ok((
-            self.driver.read_attribute(attr1)?.parse()?,
-            self.driver.read_attribute(attr2)?.parse()?,
+            self.driver.read_attribute(attr1).await?.parse()?,
+            self.driver.read_attribute(attr2).await?.parse()?,
         ))
     }
 }

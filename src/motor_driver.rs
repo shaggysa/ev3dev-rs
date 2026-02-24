@@ -45,14 +45,14 @@ impl MotorDriver {
         Err(Ev3Error::MotorNotFound { port })
     }
 
-    pub(crate) fn read_attribute(&self, name: AttributeName) -> Ev3Result<String> {
+    pub(crate) async fn read_attribute(&self, name: AttributeName) -> Ev3Result<String> {
         if let Some(attr) = self.attributes.borrow().get(&name) {
-            attr.get()
+            attr.get().await
         } else {
             // if the value is not in the hashmap, create a new attribute,
             // get its current value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
-            let val = attr.get()?;
+            let val = attr.get().await?;
             _ = self.attributes.borrow_mut().insert(name, attr);
             Ok(val)
         }

@@ -14,8 +14,8 @@ use crate::{
 ///
 /// let ultrasonic_sensor = UltrasonicSensor::new(SensorPort::In1)?;
 ///
-/// println!("Distance (in): {}", ultrasonic_sensor.distance_in()?);
-/// println!("Distance (cm): {}", ultrasonic_sensor.distance_cm()?);
+/// println!("Distance (in): {}", ultrasonic_sensor.distance_in().await?);
+/// println!("Distance (cm): {}", ultrasonic_sensor.distance_cm().await?);
 ///
 /// ```
 pub struct UltrasonicSensor {
@@ -33,25 +33,23 @@ impl UltrasonicSensor {
     }
 
     /// Get the distance value of the sensor in inches to one decimal place (0-2550).
-    pub fn distance_in(&self) -> Ev3Result<f32> {
-        if self.driver.mode.get() != SensorMode::UltrasonicDistanceIn {
-            self.driver.set_mode(SensorMode::UltrasonicDistanceIn)?;
-        }
+    pub async fn distance_in(&self) -> Ev3Result<f32> {
+        self.driver.set_mode(SensorMode::UltrasonicDistanceIn).await?;
+
         Ok(self
             .driver
-            .read_attribute(AttributeName::Value0)?
+            .read_attribute(AttributeName::Value0).await?
             .parse::<f32>()?
             / 10.0)
     }
 
     /// Get the distance value of the sensor in centimeters to one decimal place (0-1003).
-    pub fn distance_cm(&self) -> Ev3Result<f32> {
-        if self.driver.mode.get() != SensorMode::UltrasonicDistanceCm {
-            self.driver.set_mode(SensorMode::UltrasonicDistanceCm)?;
-        }
+    pub async fn distance_cm(&self) -> Ev3Result<f32> {
+        self.driver.set_mode(SensorMode::UltrasonicDistanceCm).await?;
+        
         Ok(self
             .driver
-            .read_attribute(AttributeName::Value0)?
+            .read_attribute(AttributeName::Value0).await?
             .parse::<f32>()?
             / 10.0)
     }

@@ -72,7 +72,7 @@ impl<'a> DriveBase<'a> {
     /// Wheel diameter and axle track are in mm.
     ///
     /// Using a gyroscope is highly recommended, see `with_gyro` or `with_gyros`.
-    pub fn new<Number>(
+    pub async fn new<Number>(
         left_motor: &'a Motor,
         right_motor: &'a Motor,
         wheel_diameter: Number,
@@ -90,8 +90,8 @@ impl<'a> DriveBase<'a> {
         Ok(Self {
             left_motor,
             right_motor,
-            left_start_angle: left_motor.angle()?,
-            right_start_angle: right_motor.angle()?,
+            left_start_angle: left_motor.angle().await?,
+            right_start_angle: right_motor.angle().await?,
             min_speed: I32F32::from_num(100),
             wheel_diameter: I32F32::from_num(wheel_diameter),
             axle_track: I32F32::from_num(axle_track),
@@ -126,17 +126,17 @@ impl<'a> DriveBase<'a> {
     ///
     /// let gyro = GyroSensor::new(SensorPort::In1)?;
     ///
-    /// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+    /// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro).await?;
     ///
     /// // you have to explicitly enable the gyro
     ///
     /// drive.use_gyro(true)?;
     /// ```
-    pub fn with_gyro<'b>(mut self, gyro_sensor: &'b GyroSensor) -> Ev3Result<Self>
+    pub async fn with_gyro<'b>(mut self, gyro_sensor: &'b GyroSensor) -> Ev3Result<Self>
     where
         'b: 'a,
     {
-        self.gyros = Some(GyroController::new(vec![gyro_sensor])?);
+        self.gyros = Some(GyroController::new(vec![gyro_sensor]).await?);
         Ok(self)
     }
 
@@ -165,11 +165,11 @@ impl<'a> DriveBase<'a> {
     ///
     /// drive.use_gyro(true)?;
     /// ```
-    pub fn with_gyros<'b>(mut self, gyro_sensors: Vec<&'b GyroSensor>) -> Ev3Result<Self>
+    pub async fn with_gyros<'b>(mut self, gyro_sensors: Vec<&'b GyroSensor>) -> Ev3Result<Self>
     where
         'b: 'a,
     {
-        self.gyros = Some(GyroController::new(gyro_sensors)?);
+        self.gyros = Some(GyroController::new(gyro_sensors).await?);
         Ok(self)
     }
 
@@ -302,17 +302,17 @@ impl<'a> DriveBase<'a> {
         let turn_speed = self.turn_speed.get();
 
         loop {
-            let left_angle = I32F32::from_num(self.left_motor.angle()? - self.left_start_angle);
-            let right_angle = I32F32::from_num(self.right_motor.angle()? - self.right_start_angle);
+            let left_angle = I32F32::from_num(self.left_motor.angle().await? - self.left_start_angle);
+            let right_angle = I32F32::from_num(self.right_motor.angle().await? - self.right_start_angle);
             let current_distance = self.encoders_to_distance(left_angle, right_angle);
             let current_heading = if self.using_gyros.get()
                 && let Some(ref gyro) = self.gyros
             {
-                let encoders = self.encoders_to_heading()?;
-                I32F32::from_num(gyro.heading()?) * I32F32::from_num(0.9)
+                let encoders = self.encoders_to_heading().await?;
+                I32F32::from_num(gyro.heading().await?) * I32F32::from_num(0.9)
                     + encoders * I32F32::from_num(0.1)
             } else {
-                self.encoders_to_heading()?
+                self.encoders_to_heading().await?
             };
 
             let distance_error = target_distance - current_distance;
@@ -467,14 +467,14 @@ impl<'a> DriveBase<'a> {
 
         // Reset to known position
         if let Some(ref gyros) = self.gyros {
-            let start_encoder_heading = self.encoders_to_heading()?;
-            gyros.reset()?;
+            let start_encoder_heading = self.encoders_to_heading().await?;
+            gyros.reset().await?;
             // Do a test turn (90 degrees)
             self.turn(90).await?;
 
             // Measure error
-            let gyro_turned = gyros.heading()?;
-            let encoder_turned = self.encoders_to_heading()? - start_encoder_heading;
+            let gyro_turned = gyros.heading().await?;
+            let encoder_turned = self.encoders_to_heading().await? - start_encoder_heading;
 
             let error = (gyro_turned - encoder_turned).abs();
             println!("Error: {}", error);
@@ -494,9 +494,9 @@ impl<'a> DriveBase<'a> {
     }
 
     // Convert encoder positions to heading (differential between wheels)
-    fn encoders_to_heading(&self) -> Ev3Result<I32F32> {
-        let left_deg = I32F32::from_num(self.left_motor.angle()? - self.left_start_angle);
-        let right_deg = I32F32::from_num(self.right_motor.angle()? - self.right_start_angle);
+    async fn encoders_to_heading(&self) -> Ev3Result<I32F32> {
+        let left_deg = I32F32::from_num(self.left_motor.angle().await? - self.left_start_angle);
+        let right_deg = I32F32::from_num(self.right_motor.angle().await? - self.right_start_angle);
 
         let wheel_circ = I32F32::PI * self.wheel_diameter;
         let left_mm = wheel_circ * left_deg / 360;

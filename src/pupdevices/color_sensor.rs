@@ -15,11 +15,11 @@ use std::str::FromStr;
 ///
 /// let color_sensor = ColorSensor::new(SensorPort::In1)?;
 ///
-/// println!("Reflected light intensity: {}", color_sensor.reflection()?);
-/// println!("Ambient light intensity: {}", color_sensor.ambient()?);
-/// println!("Current color: {}", color_sensor.color()?);
+/// println!("Reflected light intensity: {}", color_sensor.reflection().await?);
+/// println!("Ambient light intensity: {}", color_sensor.ambient().await?);
+/// println!("Current color: {}", color_sensor.color().await?);
 ///
-/// let (r, g, b) = color_sensor.raw_rgb()?;
+/// let (r, g, b) = color_sensor.raw_rgb().await?;
 /// println!("red: {}", r);
 /// println!("green: {}", g);
 /// println!("blue: {}", b);
@@ -39,27 +39,27 @@ impl ColorSensor {
     }
 
     /// Get the reflected light intensity of the sensor as a percentage (0 to 100).
-    pub fn reflection(&self) -> Ev3Result<u8> {
-        if self.driver.mode.get() != ColorReflectedLight {
-            self.driver.set_mode(ColorReflectedLight)?;
-        }
-        Ok(self.driver.read_attribute(Value0)?.parse()?)
+    pub async fn reflection(&self) -> Ev3Result<u8> {
+        self.driver.set_mode(ColorReflectedLight).await?;
+        
+        
+        Ok(self.driver.read_attribute(Value0).await?.parse()?)
     }
 
     /// Get the ambient light intensity of the sensor as a percentage (0 to 100).
-    pub fn ambient(&self) -> Ev3Result<u8> {
-        if self.driver.mode.get() != ColorAmbientLight {
-            self.driver.set_mode(ColorAmbientLight)?;
-        }
-        Ok(self.driver.read_attribute(Value0)?.parse()?)
+    pub async fn ambient(&self) -> Ev3Result<u8> {
+        
+        self.driver.set_mode(ColorAmbientLight).await?;
+        
+        Ok(self.driver.read_attribute(Value0).await?.parse()?)
     }
 
     /// Get the color detected by the sensor as a `Color`.
-    pub fn color(&self) -> Ev3Result<Color> {
-        if self.driver.mode.get() != ColorColor {
-            self.driver.set_mode(ColorColor)?;
-        }
-        Color::from_str(&self.driver.read_attribute(Value0)?)
+    pub async fn color(&self) -> Ev3Result<Color> {
+
+            self.driver.set_mode(ColorColor).await?;
+        
+        Color::from_str(&self.driver.read_attribute(Value0).await?)
     }
 
     /// Get the raw RGB values of the sensor (0-1020).
@@ -67,16 +67,14 @@ impl ColorSensor {
     /// # Examples
     ///
     /// ``` no_run
-    /// let (r, g, b) = sensor.raw_rgb()?;
+    /// let (r, g, b) = sensor.raw_rgb().await?;
     /// ```
-    pub fn raw_rgb(&self) -> Ev3Result<(u16, u16, u16)> {
-        if self.driver.mode.get() != ColorRawRGB {
-            self.driver.set_mode(ColorRawRGB)?;
-        }
+    pub async fn raw_rgb(&self) -> Ev3Result<(u16, u16, u16)> {
+        self.driver.set_mode(ColorRawRGB).await?;
 
-        let r = self.driver.read_attribute(Value0)?.parse()?;
-        let g = self.driver.read_attribute(Value1)?.parse()?;
-        let b = self.driver.read_attribute(Value2)?.parse()?;
+        let r = self.driver.read_attribute(Value0).await?.parse()?;
+        let g = self.driver.read_attribute(Value1).await?.parse()?;
+        let b = self.driver.read_attribute(Value2).await?.parse()?;
 
         Ok((r, g, b))
     }

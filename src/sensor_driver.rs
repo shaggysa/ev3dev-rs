@@ -3,10 +3,11 @@ use crate::crate_enum_str;
 use crate::enum_string::AsStr;
 use crate::error::{Ev3Error, Ev3Result};
 use crate::parameters::SensorPort;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::{collections::HashMap, fs};
+use std::time::Duration;
 
 const SENSOR_DIR: &str = "/sys/class/lego-sensor";
 
@@ -62,7 +63,6 @@ crate_enum_str! {
 pub(crate) struct SensorDriver {
     base_path: PathBuf,
     attributes: RefCell<HashMap<AttributeName, Attribute>>,
-    pub(crate) mode: Cell<SensorMode>,
 }
 
 impl SensorDriver {
@@ -89,14 +89,11 @@ impl SensorDriver {
                             FileMode::ReadWrite,
                         )?;
 
-                        let mode = SensorMode::from_str(&mode_attr.get()?)?;
-
                         attributes.insert(AttributeName::Mode, mode_attr);
 
                         Ok(Self {
                             base_path: direntry,
                             attributes: RefCell::new(attributes),
-                            mode: Cell::new(mode),
                         })
                     } else {
                         Err(Ev3Error::IncorrectSensorType {
@@ -114,20 +111,20 @@ impl SensorDriver {
         })
     }
 
-    pub(crate) fn read_attribute(&self, name: AttributeName) -> Ev3Result<String> {
+    pub(crate) async fn read_attribute(&self, name: AttributeName) -> Ev3Result<String> {
         if let Some(attr) = self.attributes.borrow().get(&name) {
-            attr.get()
+            attr.get().await
         } else {
             // if the value is not in the hashmap, create a new attribute,
             // get its current value, and insert it into the hashmap
             let attr = Attribute::new(self.base_path.join(name.to_string()), name.filemode())?;
-            let val = attr.get()?;
+            let val = attr.get().await?;
             _ = self.attributes.borrow_mut().insert(name, attr);
             Ok(val)
         }
     }
 
-    pub(crate) fn set_attribute<T>(&self, name: AttributeName, value: T) -> Ev3Result<()>
+    pub(crate) async fn set_attribute<T>(&self, name: AttributeName, value: T) -> Ev3Result<()>
     where
         T: AsStr,
     {
@@ -142,10 +139,17 @@ impl SensorDriver {
             Ok(())
         }
     }
+    
+    pub(crate) async fn set_mode(&self, mode: SensorMode) -> Ev3Result<()> {
+        if SensorMode::from_str(&self.read_attribute(AttributeName::Mode).await?)? != mode {
+            self.set_attribute(AttributeName::Mode, mode).await?;
 
-    pub(crate) fn set_mode(&self, mode: SensorMode) -> Ev3Result<()> {
-        self.set_attribute(AttributeName::Mode, mode)?;
-        self.mode.set(mode);
+            // allow time for the OS to accept the change and the sensor to poll
+            tokio::time::sleep(Duration::from_micros(500)).await;
+
+            assert_eq!(SensorMode::from_str(&self.read_attribute(AttributeName::Mode).await?)?, mode);
+        }
+
         Ok(())
     }
 }

@@ -32,9 +32,9 @@ impl TouchSensor {
     }
 
     /// Returns `true` if the sensor is currently pressed and `false` otherwise.
-    pub fn pressed(&self) -> Ev3Result<bool> {
+    pub async fn pressed(&self) -> Ev3Result<bool> {
         // only one possible mode, no need to check
-        let raw_value = self.driver.read_attribute(Value0)?;
+        let raw_value = self.driver.read_attribute(Value0).await?;
 
         let int_value: u8 = raw_value.parse()?;
 

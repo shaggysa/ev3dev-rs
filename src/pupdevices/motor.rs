@@ -62,7 +62,7 @@ impl Motor {
     /// motor.reset()?;
     /// motor.run_target(300, 360)?;
     /// ```
-    pub fn new(port: MotorPort, direction: Direction) -> Ev3Result<Self> {
+    pub async fn new(port: MotorPort, direction: Direction) -> Ev3Result<Self> {
         let driver = MotorDriver::new(port)?;
 
         // reset the motor upon initialization
@@ -71,7 +71,7 @@ impl Motor {
         driver.set_attribute_enum(AttributeName::Polarity, direction)?;
 
         let count_per_rot: u32 = driver
-            .read_attribute(AttributeName::CountPerRotation)?
+            .read_attribute(AttributeName::CountPerRotation).await?
             .parse()?;
 
         Ok(Self {
@@ -84,12 +84,12 @@ impl Motor {
         })
     }
 
-    fn get_states(&self) -> Ev3Result<HashSet<State>> {
+    async fn get_states(&self) -> Ev3Result<HashSet<State>> {
         let mut states = HashSet::new();
 
         for flag in self
             .driver
-            .read_attribute(AttributeName::State)?
+            .read_attribute(AttributeName::State).await?
             .split_ascii_whitespace()
         {
             if let Ok(state) = State::from_str(flag) {
@@ -123,7 +123,7 @@ impl Motor {
         // the first tick completes immediately
         timer.tick().await;
 
-        while self.get_states()?.contains(&State::Running) {
+        while self.get_states().await?.contains(&State::Running) {
             timer.tick().await;
         }
 
@@ -193,10 +193,10 @@ impl Motor {
     }
 
     /// Gets the rotation angle of the motor.
-    pub fn angle(&self) -> Ev3Result<i32> {
+    pub async fn angle(&self) -> Ev3Result<i32> {
         Ok(self
             .driver
-            .read_attribute(AttributeName::Position)?
+            .read_attribute(AttributeName::Position).await?
             .parse::<i32>()?
             / self.count_per_degree as i32)
     }
@@ -261,14 +261,14 @@ impl Motor {
         self.dc(power)?;
         let mut timer = interval(Duration::from_millis(5));
 
-        let mut states = self.get_states()?;
+        let mut states = self.get_states().await?;
 
         // the first tick completes immediately
         timer.tick().await;
 
         while states.contains(&State::Running) && !states.contains(&State::Stalled) {
             timer.tick().await;
-            states = self.get_states()?;
+            states = self.get_states().await?;
         }
 
         Ok(())

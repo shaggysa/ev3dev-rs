@@ -183,7 +183,7 @@ impl Attribute {
         }));
         Ok(Attribute { fd, mode, path })
     }
-    pub(crate) fn get(&self) -> Ev3Result<String> {
+    pub(crate) async fn get(&self) -> Ev3Result<String> {
         match self.mode {
             FileMode::Read | FileMode::ReadWrite => {
                 let mut fd = self.fd.lock().expect("Tried to use a poisoned lock");
@@ -200,6 +200,7 @@ impl Attribute {
                     if fd.read_to_string(&mut buffer).is_ok() {
                         return Ok(buffer.trim().into());
                     }
+                    tokio::time::sleep(std::time::Duration::from_micros(100)).await;
                 }
 
                 // if 5 tries fail in a row, return the error
