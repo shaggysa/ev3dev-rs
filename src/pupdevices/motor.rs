@@ -59,8 +59,8 @@ impl Motor {
     /// use ev3dev_rs::parameters::{MotorPort, Direction};
     ///
     /// let motor = Motor::new(MotorPort::OutA, Direction::Clockwise);
-    /// motor.reset()?;
-    /// motor.run_target(300, 360)?;
+    /// motor.reset().await?;
+    /// motor.run_target(300, 360).await?;
     /// ```
     pub async fn new(port: MotorPort, direction: Direction) -> Ev3Result<Self> {
         let driver = MotorDriver::new(port)?;
@@ -71,7 +71,8 @@ impl Motor {
         driver.set_attribute_enum(AttributeName::Polarity, direction)?;
 
         let count_per_rot: u32 = driver
-            .read_attribute(AttributeName::CountPerRotation).await?
+            .read_attribute(AttributeName::CountPerRotation)
+            .await?
             .parse()?;
 
         Ok(Self {
@@ -89,7 +90,8 @@ impl Motor {
 
         for flag in self
             .driver
-            .read_attribute(AttributeName::State).await?
+            .read_attribute(AttributeName::State)
+            .await?
             .split_ascii_whitespace()
         {
             if let Ok(state) = State::from_str(flag) {
@@ -196,7 +198,8 @@ impl Motor {
     pub async fn angle(&self) -> Ev3Result<i32> {
         Ok(self
             .driver
-            .read_attribute(AttributeName::Position).await?
+            .read_attribute(AttributeName::Position)
+            .await?
             .parse::<i32>()?
             / self.count_per_degree as i32)
     }

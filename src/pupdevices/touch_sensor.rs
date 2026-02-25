@@ -14,7 +14,7 @@ use crate::{
 ///
 /// let touch_sensor = TouchSensor::new(SensorPort::In1)?;
 ///
-/// println!("Is the sensor pressed? : {}", if touch_sensor.pressed()? {"Yes"} else {"No"});
+/// println!("Is the sensor pressed? : {}", if touch_sensor.pressed().await? {"Yes"} else {"No"});
 ///
 /// ```
 pub struct TouchSensor {

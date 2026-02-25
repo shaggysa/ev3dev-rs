@@ -21,16 +21,16 @@ use tokio::time::interval;
 /// use ev3dev_rs::pupdevices::{Motor, GyroSensor};
 /// use ev3dev_rs::robotics::DriveBase;
 ///
-/// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
-/// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+/// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise).await?;
+/// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise).await?;
 ///
 /// // no gyro
-/// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?;
+/// let drive = DriveBase::new(&left, &right, 62.4, 130.5).await?;
 ///
 /// // with gyro
 /// let gyro = GyroSensor::new(SensorPort::In1)?;
 ///
-/// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+/// let drive = DriveBase::new(&left, &right, 62.4, 130.5).await?.with_gyro(&gyro).await?;
 ///
 /// // you have to explicitly enable the gyro
 /// drive.use_gyro(true)?;
@@ -114,23 +114,29 @@ impl<'a> DriveBase<'a> {
     /// # Examples
     ///
     /// ``` no_run
+    ///
     /// use ev3dev_rs::parameters::{Direction, MotorPort, SensorPort, Stop};
-    ///
     /// use ev3dev_rs::pupdevices::{Motor, GyroSensor};
-    ///
     /// use ev3dev_rs::robotics::DriveBase;
+    /// use ev3dev_rs::Ev3Result;
     ///
-    /// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
+    /// #[tokio::main]
+    /// async fn main() -> Ev3Result<()> {
     ///
-    /// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+    ///     let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise).await?;
     ///
-    /// let gyro = GyroSensor::new(SensorPort::In1)?;
+    ///     let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise).await?;
     ///
-    /// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro).await?;
+    ///     let gyro = GyroSensor::new(SensorPort::In1)?;
     ///
-    /// // you have to explicitly enable the gyro
+    ///     let drive = DriveBase::new(&left, &right, 62.4, 130.5).await?.with_gyro(&gyro).await?;
     ///
-    /// drive.use_gyro(true)?;
+    ///      // you have to explicitly enable the gyro
+    ///
+    ///     drive.use_gyro(true)?;
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn with_gyro<'b>(mut self, gyro_sensor: &'b GyroSensor) -> Ev3Result<Self>
     where
@@ -146,24 +152,29 @@ impl<'a> DriveBase<'a> {
     ///
     /// ``` no_run
     /// use ev3dev_rs::parameters::{Direction, MotorPort, SensorPort, Stop};
-    ///
     /// use ev3dev_rs::pupdevices::{Motor, GyroSensor};
-    ///
     /// use ev3dev_rs::robotics::DriveBase;
+    /// use ev3dev_rs::Ev3Result;
     ///
-    /// let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise)?;
+    /// #[tokio::main]
+    /// async fn main() -> Ev3Result<()> {
     ///
-    /// let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise)?;
+    ///     let left = Motor::new(MotorPort::OutA, Direction::CounterClockwise).await?;
     ///
-    /// let left_gyro = GyroSensor::new(SensorPort::In1)?;
+    ///     let right = Motor::new(MotorPort::OutD, Direction::CounterClockwise).await?;
     ///
-    /// let right_gyro = GyroSensor::new(SensorPort::In4)?;
+    ///     let left_gyro = GyroSensor::new(SensorPort::In1)?;
     ///
-    /// let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyros(vec![ &left_gyro, &right_gyro ])?;
+    ///     let right_gyro = GyroSensor::new(SensorPort::In4)?;
     ///
-    /// // you have to explicitly enable the gyro
+    ///     let drive = DriveBase::new(&left, &right, 62.4, 130.5).await?.with_gyros(vec![ &left_gyro, &right_gyro ]).await?;
     ///
-    /// drive.use_gyro(true)?;
+    ///     // you have to explicitly enable the gyro
+    ///
+    ///     drive.use_gyro(true)?;
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn with_gyros<'b>(mut self, gyro_sensors: Vec<&'b GyroSensor>) -> Ev3Result<Self>
     where
@@ -302,8 +313,10 @@ impl<'a> DriveBase<'a> {
         let turn_speed = self.turn_speed.get();
 
         loop {
-            let left_angle = I32F32::from_num(self.left_motor.angle().await? - self.left_start_angle);
-            let right_angle = I32F32::from_num(self.right_motor.angle().await? - self.right_start_angle);
+            let left_angle =
+                I32F32::from_num(self.left_motor.angle().await? - self.left_start_angle);
+            let right_angle =
+                I32F32::from_num(self.right_motor.angle().await? - self.right_start_angle);
             let current_distance = self.encoders_to_distance(left_angle, right_angle);
             let current_heading = if self.using_gyros.get()
                 && let Some(ref gyro) = self.gyros

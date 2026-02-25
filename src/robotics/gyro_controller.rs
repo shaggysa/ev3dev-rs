@@ -19,7 +19,7 @@ use crate::pupdevices::GyroSensor;
 /// let gyro1 = GyroSensor::new(SensorPort::In1)?;
 /// let gyro2 = GyroSensor::new(SensorPort::In2)?;
 ///
-/// let controller = GyroController::new(vec![gyro1, gyro2]).await?;
+/// let controller = GyroController::new(vec![&gyro1, &gyro2]).await?;
 ///
 /// let heading = controller.heading().await?;
 /// let angular_velocity = controller.angular_velocity().await?;
@@ -39,11 +39,12 @@ impl<'a> GyroController<'a> {
     /// ``` no_run
     /// use ev3dev_rs::pupdevices::GyroSensor;
     /// use ev3dev_rs::robotics::GyroController;
+    /// use ev3dev_rs::parameters::SensorPort;
     ///
     /// let left_gyro = GyroSensor::new(SensorPort::In1)?;
     /// let right_gyro = GyroSensor::new(SensorPort::In4)?;
     ///
-    /// let controller = GyroController::new(vec![&gyro1, &gyro2])?;
+    /// let controller = GyroController::new(vec![&left_gyro, &right_gyro]).await?;
     /// ```
     pub async fn new(gyros: Vec<&'a GyroSensor>) -> Ev3Result<Self> {
         let mut gyros_with_offsets = Vec::new();

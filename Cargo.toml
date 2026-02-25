@@ -4,14 +4,14 @@ license = "GPL-3.0-or-later"
 readme = "README.md"
 description = "High level pybricks-like rust bindings for e3dev"
 repository = "https://github.com/shaggysa/ev3dev-rs"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 
 [dependencies]
 fixed = "1.29.0"
 futures-concurrency = "7.7.1"
 scopeguard = "1.2.0"
-tokio = { version = "1.48.0", features = ["time", "macros"] }
+tokio = { version = "1.48.0", features = ["time", "macros", "rt-multi-thread"] }
 
 
 [profile.release]

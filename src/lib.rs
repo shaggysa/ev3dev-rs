@@ -10,21 +10,21 @@
 //! use ev3dev_rs::Ev3Result;
 //! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
 //! use ev3dev_rs::robotics::DriveBase;
-//! use ev3dev_rs::parameters::{MotorPort, MotorPort, Direction}
+//! use ev3dev_rs::parameters::{MotorPort, SensorPort, Direction};
 //!
 //! #[tokio::main]
 //! async fn main() -> Ev3Result<()> {
 //!
 //!     use ev3dev_rs::parameters::{Direction, SensorPort};
-//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise)?;
-//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise)?;
+//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise).await?;
+//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise).await?;
 //!
 //!     let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
 //!     let color_sensor = ColorSensor::new(SensorPort::In4)?;
 //!
-//!     println!("Detected color: {}", color_sensor.color()?);
+//!     println!("Detected color: {}", color_sensor.color().await?);
 //!
-//!     let drive = DriveBase::new(&left_motor, &right_motor, 62.4, 130.5)?.with_gyro(&gyro_sensor)?;
+//!     let drive = DriveBase::new(&left_motor, &right_motor, 62.4, 130.5).await?.with_gyro(&gyro_sensor).await?;
 //!
 //!     drive.use_gyro(true)?;
 //!
@@ -43,22 +43,22 @@
 //! extern crate ev3dev_rs;
 //! extern crate tokio;
 //!
-//! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
+//! use ev3dev_rs::Ev3Result;
+//! use ev3dev_rs::pupdevices::{GyroSensor, Motor};
 //! use ev3dev_rs::robotics::DriveBase;
-//! use ev3dev_rs::parameters::{MotorPort, MotorPort}
+//! use ev3dev_rs::parameters::{Direction, MotorPort, SensorPort };
 //!
 //! #[tokio::main]
 //! async fn main() -> Ev3Result<()> {
 //!
-//!     use ev3dev_rs::parameters::{Direction, SensorPort};
-//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise)?;
-//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise)?;
+//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise).await?;
+//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise).await?;
 //!
 //!     // A gyro sensor is required for calibration.
 //!     let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
 //!
 //!     // find_calibrated_axle_track requires a mutable reference
-//!     let mut drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+//!     let mut drive = DriveBase::new(&left_motor, &right_motor, 62.4, 130.5).await?.with_gyro(&gyro_sensor).await?;
 //!
 //!     drive.use_gyro(true)?;
 //!
@@ -81,22 +81,21 @@
 //!
 //! use ev3dev_rs::pupdevices::{GyroSensor, Motor, ColorSensor};
 //! use ev3dev_rs::robotics::DriveBase;
-//! use ev3dev_rs::parameters::{MotorPort, SensorPort}
-//! use ev3dev_rs::{join, select};
+//! use ev3dev_rs::parameters::{MotorPort, SensorPort, Direction};
+//! use ev3dev_rs::{join, select, Ev3Result};
 //!
 //! #[tokio::main]
 //! async fn main() -> Ev3Result<()> {
 //!
-//!     use ev3dev_rs::parameters::{Direction, SensorPort};
-//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise)?;
-//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise)?;
+//!     let left_motor = Motor::new(MotorPort::OutA, Direction::Clockwise).await?;
+//!     let right_motor = Motor::new(MotorPort::OutD, Direction::Clockwise).await?;
 //!
-//!     let attachment_motor = Motor::new(MotorPort::OutB, Direction::Clockwise)?;
+//!     let attachment_motor = Motor::new(MotorPort::OutB, Direction::Clockwise).await?;
 //!
 //!     let gyro_sensor = GyroSensor::new(SensorPort::In1)?;
 //!
 //!     // find_calibrated_axle_track requires a mutable reference
-//!     let drive = DriveBase::new(&left, &right, 62.4, 130.5)?.with_gyro(&gyro)?;
+//!     let drive = DriveBase::new(&left_motor, &right_motor, 62.4, 130.5).await?.with_gyro(&gyro_sensor).await?;
 //!
 //!     drive.use_gyro(true)?;
 //!
@@ -107,7 +106,7 @@
 //!
 //!     // select is like pybricks' racing multitask
 //!     // once one action completes, the other(s) will be canceled
-//!     select!(drive.turn(90), attachment_motor.run_until_stalled(45))?
+//!     select!(drive.turn(90), attachment_motor.run_until_stalled(45))?;
 //!
 //!     Ok(())
 //! }
